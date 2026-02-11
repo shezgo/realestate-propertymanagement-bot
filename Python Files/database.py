@@ -53,6 +53,7 @@ class Database:
                 conn.close()
             raise
 
+    @staticmethod
     def get_response(self, query, values=None, fetch=False, many_entities=False, type=None):
         """
         Executes a SQL query with optional values and fetches results if requested.
@@ -84,19 +85,19 @@ class Database:
 
     @staticmethod
     def select(query, values=None, fetch=True):
-        return Database().get_response(query, values=values, fetch=fetch)
+        return Database.get_response(query, values=values, fetch=fetch)
 
     @staticmethod
     def insert(query, values=None, many_entities=False):
-        return Database().get_response(query, values=values, many_entities=many_entities)
+        return Database.get_response(query, values=values, many_entities=many_entities)
 
     @staticmethod
     def update(query, values=None):
-        return Database().get_response(query, values=values)
+        return Database.get_response(query, values=values)
 
     @staticmethod
     def delete(query, values=None):
-        return Database().get_response(query, values=values)
+        return Database.get_response(query, values=values)
 
     @staticmethod
     def callprocedure(sql_stored_component, parameters, fetch=False):
@@ -113,8 +114,53 @@ class Query:
     """
 
     # TODO: Create all your queries or calls to your sql stored components here
+
+    REGISTERED_USER = """
+        SELECT * FROM RegisteredUsers
+        WHERE tracking_id = %s
+    """
+
+    INSERT_REGISTERED_USER = """
+        INSERT INTO RegisteredUsers (tracking_id, email, first_name, last_name)
+        VALUES (%s, %s, %s, %s)
+    """
+
+    PROC_AssignRole = """AssignRole"""
+    PROC_CheckBeforeQuery = """CheckBeforeQuery"""
+    PROC_RefreshRole = """RefreshRole"""
     pass
 
 class Tables:
     # TODO: Create here all the constants for your table descriptors
-    pass
+
+    # Tables
+    ADDRESSES = "Addresses"
+    CONTRACTORS = "Contractors"
+    EXPENSE_HISTORIES = "ExpenseHistories"
+    INSPECTION_RECORDS = "InspectionRecords"
+    INSURANCE_POLICIES = "InsurancePolicies"
+    LEASE_AGREEMENTS = "LeaseAgreements"
+    MORTGAGES = "Mortgages"
+    PAYMENT_HISTORIES = "PaymentHistories" 
+    PORTFOLIO_PROPERTIES = "PortfolioProperties"
+    PORTFOLIOS = "Portfolios"
+    PROJECT_CONTRACTORS = "ProjectContractors"
+    PROJECT_INFOS = "ProjectInfos"
+    PROJECT_UPDATES = "ProjectUpdates"
+    PROPERTIES = "Properties"
+    PROPERTY_HISTORIES = "PropertyHistories"
+    REGISTERED_USERS = "RegisteredUsers"
+    ROLES = "Roles"
+    TAX_RECORDS = "TaxRecords"
+    TENANTS = "Tenants"
+    UNITS = "Units"
+    UNIT_TENANTS = "UnitTenants"
+    USER = "User"
+    USER_PORTFOLIOS = "UserPortfolios"
+
+    # Views
+    CURRENT_PROJECTS = "CurrentProjects"
+    PORTFOLIO_PERFORMANCE = "PortfolioPerformance"
+    VIEW_MORTGAGES = "ViewMortgages" 
+    VIEW_TENANTS = "ViewTenants" 
+    

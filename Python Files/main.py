@@ -55,7 +55,7 @@ async def test_bot(ctx, with_db_conn=None):
       (2) To test the bot with a database connection: !test_bot db_connect
     """
     try:
-        response = "Hello, from your Bot. I am alive!. \n"
+        response = "Hello, from your Bot. I am alive!1. \n"
         if with_db_conn and "db_connect" in with_db_conn:
             from database import Database  # only imported in this scope
             db = Database()
@@ -76,6 +76,43 @@ async def test_bot(ctx, with_db_conn=None):
 #       (1) Define the business logic requirements for each command in the help parameter.
 #       (2) Implement the functionalities of these commands based on your project needs.
 
+@bot.command(name = "register", help = "Use this command to create an account for your " 
+                                        "property management database")
+async def register_user(ctx, email: str, first_name: str, last_name: str):
+    discord_id = ctx.author.id 
+
+    existing_user = Database.select(Query.REGISTERED_USER, (discord_id,))
+    
+    if existing_user:
+        await ctx.send("You are already registered in the system.")
+        return
+    
+    await ctx.send("Let's get you registered.\n"
+                   "Please enter your email:")
+    
+    def check(msg):
+        return msg.author == ctx.author and msg.channel == ctx.channel
+    
+    try:
+        email_msg = await bot.wait_for("message", timeout = 60.0, check = check)
+        email = email_msg.content.strip()
+
+        await ctx.send("Please enter your first name:")
+        first_name_msg = await bot.wait_for("message", timeout = 60.0, check = check)
+        first_name = first_name_msg.content.strip()
+
+        await ctx.send("Please enter your last name:")
+        last_name_msg = await bot.wait_for("message", timeout = 60.0, check = check)
+        last_name = last_name_msg.content.strip()
+
+    except:
+        await ctx.send("Registration timed out. Please try again.")
+        return
+
+    
+    Database.insert(Query.INSERT_REGISTERED_USER, (discord_id, email, first_name, last_name))
+
+    await ctx.send(f"Welcome, {first_name}! Your Discord ID has been securely linked to your account.")
 
 bot.run(TOKEN)
 

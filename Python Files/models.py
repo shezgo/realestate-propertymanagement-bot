@@ -9,6 +9,26 @@ separation of concerns between the ORM layer and direct database interaction.
 
 from database import *
 
+class ModelInterface:
 
+    def synchronize(self):
+        pass
+
+    def update(self, data):
+        pass
+
+    def delete(self, condition = None):
+        pass
+
+    def unwrap(self):
+        pass
+
+    class ModelFactory:
+        # Makes and gets all the models
+
+        @staticmethod
+        def make(table_identifier, data):
+            Database.insert(data, into: Table)
+            return Model.getBy(data.id)
 
 
