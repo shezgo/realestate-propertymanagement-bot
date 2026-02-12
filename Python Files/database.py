@@ -53,7 +53,7 @@ class Database:
                 conn.close()
             raise
 
-    @staticmethod
+
     def get_response(self, query, values=None, fetch=False, many_entities=False, type=None):
         """
         Executes a SQL query with optional values and fetches results if requested.
@@ -85,23 +85,23 @@ class Database:
 
     @staticmethod
     def select(query, values=None, fetch=True):
-        return Database.get_response(query, values=values, fetch=fetch)
+        return Database().get_response(query, values=values, fetch=fetch)
 
     @staticmethod
     def insert(query, values=None, many_entities=False):
-        return Database.get_response(query, values=values, many_entities=many_entities)
+        return Database().get_response(query, values=values, many_entities=many_entities)
 
     @staticmethod
     def update(query, values=None):
-        return Database.get_response(query, values=values)
+        return Database().get_response(query, values=values)
 
     @staticmethod
     def delete(query, values=None):
-        return Database.get_response(query, values=values)
+        return Database().get_response(query, values=values)
 
     @staticmethod
     def callprocedure(sql_stored_component, parameters, fetch=False):
-        return Database.get_response(sql_stored_component, values=parameters, type="Proc", fetch=fetch)
+        return Database().get_response(sql_stored_component, values=parameters, type="Proc", fetch=fetch)
 
     # TODO: Implement additional methods to facilitate further data manipulation as required by your application.
 
@@ -121,14 +121,14 @@ class Query:
     """
 
     INSERT_REGISTERED_USER = """
-        INSERT INTO RegisteredUsers (tracking_id, email, first_name, last_name)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO RegisteredUsers (tracking_id, email, first_name, last_name, role_id)
+        VALUES (%s, %s, %s, %s, %s)
     """
 
     PROC_AssignRole = """AssignRole"""
     PROC_CheckBeforeQuery = """CheckBeforeQuery"""
     PROC_RefreshRole = """RefreshRole"""
-    pass
+    
 
 class Tables:
     # TODO: Create here all the constants for your table descriptors
@@ -155,7 +155,6 @@ class Tables:
     TENANTS = "Tenants"
     UNITS = "Units"
     UNIT_TENANTS = "UnitTenants"
-    USER = "User"
     USER_PORTFOLIOS = "UserPortfolios"
 
     # Views

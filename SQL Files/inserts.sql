@@ -1,12 +1,6 @@
 -- This file is used to insert sample data to populate the PropertyManagementDB database
 USE PropertyManagementDB;
 
-INSERT INTO `User` (tracking_id, firstseen_date, lastseen_date) 
-VALUES
-(1, '2024-01-01', '2024-01-10'),
-(2, '2024-02-01', '2024-02-15'),
-(3, '2024-03-01', '2024-03-20');
-
 INSERT INTO `Roles` (role_id, role_type) 
 VALUES
 (1, 'Owner'),
@@ -14,11 +8,11 @@ VALUES
 (3, 'Guest');
 
 
-INSERT INTO `RegisteredUsers` (tracking_id, email, first_name, last_name, User_tracking_id, role_id) 
+INSERT INTO `RegisteredUsers` (tracking_id, email, first_name, last_name, role_id) 
 VALUES
-(1, 'admin@example.com', 'Admin', 'User', 1, 1), 
-(2, 'owner@example.com', 'Owner', 'One', 2, 2), 
-(3, 'owner2@example.com', 'Owner', 'Two', 3, 2); 
+(1, 'admin@example.com', 'Owner', 'One', 1), 
+(2, 'owner@example.com', 'Owner', 'Two', 1), 
+(3, 'owner2@example.com', 'Owner', 'Three', 1); 
 
 INSERT INTO `Portfolios` (portfolio_id, num_properties, last_appraised_val)
 VALUES

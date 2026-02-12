@@ -55,7 +55,7 @@ async def test_bot(ctx, with_db_conn=None):
       (2) To test the bot with a database connection: !test_bot db_connect
     """
     try:
-        response = "Hello, from your Bot. I am alive!1. \n"
+        response = "Hello, from your Bot. I am alive! \n"
         if with_db_conn and "db_connect" in with_db_conn:
             from database import Database  # only imported in this scope
             db = Database()
@@ -78,7 +78,7 @@ async def test_bot(ctx, with_db_conn=None):
 
 @bot.command(name = "register", help = "Use this command to create an account for your " 
                                         "property management database")
-async def register_user(ctx, email: str, first_name: str, last_name: str):
+async def register_user(ctx, email = None, first_name = None, last_name = None):
     discord_id = ctx.author.id 
 
     existing_user = Database.select(Query.REGISTERED_USER, (discord_id,))
@@ -109,10 +109,17 @@ async def register_user(ctx, email: str, first_name: str, last_name: str):
         await ctx.send("Registration timed out. Please try again.")
         return
 
-    
-    Database.insert(Query.INSERT_REGISTERED_USER, (discord_id, email, first_name, last_name))
+    new_user =(
+        discord_id,
+        email,
+        first_name,
+        last_name,
+        1 # All users are owners for now.
+    )
+    print(f"discord_id:{discord_id}")
+    registered_user = ModelFactory.make(Tables.REGISTERED_USERS, new_user)
 
-    await ctx.send(f"Welcome, {first_name}! Your Discord ID has been securely linked to your account.")
+    await ctx.send(f"Welcome, {registered_user.first_name}! Your Discord ID has been securely linked to your account.")
 
 bot.run(TOKEN)
 

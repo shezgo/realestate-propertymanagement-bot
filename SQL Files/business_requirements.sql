@@ -102,11 +102,11 @@ BEGIN
     SET expires = DATE_ADD(CURDATE(), INTERVAL 1 YEAR)
     WHERE role_id = in_role_id;
     END$$
-    
+
     DELIMITER ;
     
 -- Test
-    CALL AssignRole(1, 1, '2025-12-10');
+    CALL AssignRole(1, 1, '2030-12-10');
     CALL CheckBeforeQuery(1,'SELECT * FROM Properties');
     CALL RefreshRole(1, 3); -- Change user 1's role to Guest
     
@@ -157,7 +157,7 @@ SELECT
     pp.property_rent AS Rental_Income,
     m.monthly_payment AS Mortgage,
     prop.monthly_capex AS Capital_Expenditures,
-    cfte.cash_flow 
+    cfte.cash_flow, 
     ph.purchase_price AS Purchase_Price,
     prop.target_arv AS ARV
 FROM RegisteredUsers ru
