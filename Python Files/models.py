@@ -55,9 +55,9 @@ class RegisteredUserModel(ModelInterface):
             return
 
         row = data[0]
-        self.email = row["email"]
-        self.first_name = row["first_name"]
-        self.last_name = row["last_name"]
-        self.full_name = row["full_name"]
-        self.role_id = row["role_id"]
-        self.role_expires = row["role_expires"]
+        self.email = row.get("email")
+        self.first_name = row.get("first_name")
+        self.last_name = row.get("last_name")
+        self.full_name = row.get("full_name")
+        self.role_id = row.get("role_id")
+        self.role_expires = row.get("role_expires")
