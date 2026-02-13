@@ -29,7 +29,7 @@ class ModelFactory:
     @staticmethod
     def make(table_identifier, data):
         Database.insert(Query.INSERT_REGISTERED_USER, values = data)
-        return ModelFactory.getBy(table_identifier, data[0])
+        return ModelFactory.getBy(table_identifier, data["tracking_id"])
 
     @staticmethod
     def getBy(table_identifier, entity_identifier):
@@ -44,7 +44,9 @@ class RegisteredUserModel(ModelInterface):
         self.email = None
         self.first_name = None
         self.last_name = None
+        self.full_name = None
         self.role_id = None
+        self.role_expires = None
         self._load()
 
     def _load(self):
@@ -56,4 +58,6 @@ class RegisteredUserModel(ModelInterface):
         self.email = row["email"]
         self.first_name = row["first_name"]
         self.last_name = row["last_name"]
+        self.full_name = row["full_name"]
         self.role_id = row["role_id"]
+        self.role_expires = row["role_expires"]

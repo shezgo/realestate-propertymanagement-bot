@@ -68,7 +68,7 @@ class Database:
             The result of the query if fetch is True; None otherwise.
         """
         connection = self.connect()
-        cursor = connection.cursor()
+        cursor = connection.cursor(pymysql.cursors.DictCursor)
         try:
             if values:
                 if type=="Proc":
@@ -122,7 +122,7 @@ class Query:
 
     INSERT_REGISTERED_USER = """
         INSERT INTO RegisteredUsers (tracking_id, email, first_name, last_name, role_id)
-        VALUES (%s, %s, %s, %s, %s)
+        VALUES (%(tracking_id)s, %(email)s, %(first_name)s, %(last_name)s, %(role_id)s)
     """
 
     PROC_AssignRole = """AssignRole"""

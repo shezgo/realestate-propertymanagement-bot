@@ -109,14 +109,13 @@ async def register_user(ctx, email = None, first_name = None, last_name = None):
         await ctx.send("Registration timed out. Please try again.")
         return
 
-    new_user =(
-        discord_id,
-        email,
-        first_name,
-        last_name,
-        1 # All users are owners for now.
-    )
-    print(f"discord_id:{discord_id}")
+    new_user ={
+        "tracking_id": discord_id,
+        "email": email,
+        "first_name": first_name,
+        "last_name": last_name,
+        "role_id": 1 # All users are owners for now.
+    }
     registered_user = ModelFactory.make(Tables.REGISTERED_USERS, new_user)
 
     await ctx.send(f"Welcome, {registered_user.first_name}! Your Discord ID has been securely linked to your account.")
