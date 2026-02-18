@@ -349,3 +349,312 @@ DELIMITER ;
 SELECT *
 FROM CurrentProjects
 WHERE user_id = 1
+
+/*
+Business Requirement #6:
+----------------------------------------------------
+Purpose: Assign a complete set of sample data for new users to begin testing the program.
+
+Description: Insert sample data into each entity corresponding with the Portfolio of the calling RegisteredUser.
+
+Challenge: Connecting all tables to the same portfolio, and ensuring consistency in the data. Also important is to ensure 
+that it can only be called once to prevent excessive querying or DOS attacks.
+
+Assumptions: The calling method provides the tracking_id of the calling RegisteredUser.
+
+Implementation plan: 
+1. Drop the procedure if it exists. Create it and pass in the caller's user tracking_id.
+2. Wrap the procedure in START and COMMIT with an exit exception to ROLLBACK, so we don't have partial data errors.
+3. Get the user's portfolio, or create one if it doesn't exist.
+4. Begin inserting sample properties into Portfolio.
+5. Follow the EER to implement corresponding data in other entities branching off from Portfolio for tracking
+and consistency.
+6. COMMIT the changes.
+*/
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS CreateSampleUserData $$
+
+CREATE PROCEDURE CreateSampleUserData(IN in_user_id BIGINT)
+BEGIN
+    DECLARE v_portfolio_id INT;
+
+    -- Addresses
+    DECLARE addr0 INT; DECLARE addr1 INT; DECLARE addr2 INT; DECLARE addr3 INT; DECLARE addr4 INT; DECLARE addr5 INT;
+
+    -- Properties
+    DECLARE prop0 INT; DECLARE prop1 INT; DECLARE prop2 INT; DECLARE prop3 INT; DECLARE prop4 INT; DECLARE prop5 INT;
+
+    -- ProjectInfos
+    DECLARE proj0 INT; DECLARE proj1 INT; DECLARE proj2 INT; DECLARE proj3 INT; DECLARE proj4 INT; DECLARE proj5 INT;
+
+    -- Contractors
+    DECLARE cont0 INT; DECLARE cont1 INT; DECLARE cont2 INT; DECLARE cont3 INT; DECLARE cont4 INT; DECLARE cont5 INT;
+
+    -- PropertyHistories
+    DECLARE hist0 INT; DECLARE hist1 INT; DECLARE hist2 INT; DECLARE hist3 INT; DECLARE hist4 INT; DECLARE hist5 INT;
+
+    -- Units
+    DECLARE unit0 INT; DECLARE unit1 INT; DECLARE unit2 INT; DECLARE unit3 INT; DECLARE unit4 INT; DECLARE unit5 INT;
+
+    -- LeaseAgreements
+    DECLARE lease0 INT; DECLARE lease1 INT; DECLARE lease2 INT; DECLARE lease3 INT; DECLARE lease4 INT; DECLARE lease5 INT;
+
+    -- Tenants
+    DECLARE tenant0 INT; DECLARE tenant1 INT; DECLARE tenant2 INT; DECLARE tenant3 INT; DECLARE tenant4 INT; DECLARE tenant5 INT;
+
+    -- Exit handler
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+        START TRANSACTION;
+
+        -- Get or create portfolio
+        SELECT portfolio_id INTO v_portfolio_id
+        FROM UserPortfolios
+        WHERE user_id = in_user_id
+        LIMIT 1;
+
+        IF v_portfolio_id IS NULL THEN
+            INSERT INTO Portfolios(num_properties, last_appraised_val) VALUES (0,0);
+            SET v_portfolio_id = LAST_INSERT_ID();
+            INSERT INTO UserPortfolios(user_id, portfolio_id, last_appraised_val)
+            VALUES (in_user_id, v_portfolio_id, 0);
+        END IF;
+
+        -- Insert Addresses
+        INSERT INTO Addresses(country,state_province,city,street,number)
+        VALUES ('USA','California','Los Angeles','Sunset Blvd',101);
+        SET addr0 = LAST_INSERT_ID();
+
+        INSERT INTO Addresses(country,state_province,city,street,number)
+        VALUES ('USA','California','Los Angeles','Hollywood Blvd',202);
+        SET addr1 = LAST_INSERT_ID();
+
+        INSERT INTO Addresses(country,state_province,city,street,number)
+        VALUES ('USA','New York','New York City','5th Ave',303);
+        SET addr2 = LAST_INSERT_ID();
+
+        INSERT INTO Addresses(country,state_province,city,street,number)
+        VALUES ('USA','Florida','Miami','Ocean Dr',404);
+        SET addr3 = LAST_INSERT_ID();
+
+        INSERT INTO Addresses(country,state_province,city,street,number)
+        VALUES ('USA','Texas','Houston','Main St',505);
+        SET addr4 = LAST_INSERT_ID();
+
+        INSERT INTO Addresses(country,state_province,city,street,number)
+        VALUES ('USA','Illinois','Chicago','Lake Shore Dr',606);
+        SET addr5 = LAST_INSERT_ID();
+
+        -- Insert Properties
+        INSERT INTO Properties(total_rent, monthly_capex, bedroom_count, bathroom_count, sqft, lot_size, target_arv, address_id)
+        VALUES (5000,500,3,2,1800,5000,1000000,addr0);
+        SET prop0 = LAST_INSERT_ID();
+
+        INSERT INTO Properties(total_rent, monthly_capex, bedroom_count, bathroom_count, sqft, lot_size, target_arv, address_id)
+        VALUES (2500,250,2,1,900,2000,500000,addr1);
+        SET prop1 = LAST_INSERT_ID();
+
+        INSERT INTO Properties(total_rent, monthly_capex, bedroom_count, bathroom_count, sqft, lot_size, target_arv, address_id)
+        VALUES (5500,550,3,2,1500,4000,1500000,addr2);
+        SET prop2 = LAST_INSERT_ID();
+
+        INSERT INTO Properties(total_rent, monthly_capex, bedroom_count, bathroom_count, sqft, lot_size, target_arv, address_id)
+        VALUES (1000,100,1,1,1200,1200,300000,addr3);
+        SET prop3 = LAST_INSERT_ID();
+
+        INSERT INTO Properties(total_rent, monthly_capex, bedroom_count, bathroom_count, sqft, lot_size, target_arv, address_id)
+        VALUES (1100,110,1,1,1300,1300,400000,addr4);
+        SET prop4 = LAST_INSERT_ID();
+
+        INSERT INTO Properties(total_rent, monthly_capex, bedroom_count, bathroom_count, sqft, lot_size, target_arv, address_id)
+        VALUES (5500,550,4,2,2000,6000,1000000,addr5);
+        SET prop5 = LAST_INSERT_ID();
+
+        -- PortfolioProperties
+        INSERT INTO PortfolioProperties(portfolio_id, property_id, property_rent)
+        VALUES 
+            (v_portfolio_id, prop0, 5000),
+            (v_portfolio_id, prop1, 2500),
+            (v_portfolio_id, prop2, 5500),
+            (v_portfolio_id, prop3, 1000),
+            (v_portfolio_id, prop4, 1100),
+            (v_portfolio_id, prop5, 5500);
+
+        -- TaxRecords
+        INSERT INTO TaxRecords(property_id,payment_date,due_date,amount_paid,year)
+        VALUES
+            (prop0,'2024-03-01','2024-03-15',5000,2024),
+            (prop1,'2024-04-01','2024-04-15',2500,2024),
+            (prop2,'2024-05-01','2024-05-15',5500,2024),
+            (prop3,'2024-06-01','2024-06-15',1000,2024),
+            (prop4,'2024-07-01','2024-07-15',1100,2024),
+            (prop5,'2024-08-01','2024-08-15',5500,2024);
+
+        -- Mortgages
+        INSERT INTO Mortgages(lender_name,principal_balance,interest_rate,monthly_payment,start_date,end_date,property_id,terms)
+        VALUES
+            ('Bank A',400000,3.5,1800,'2000-01-01','2030-01-01',prop0,'30-year fixed'),
+            ('Bank B',200000,4.0,1200,'2001-02-01','2026-02-01',prop1,'25-year fixed'),
+            ('Bank C',500000,3.8,2400,'2024-03-01','2054-03-01',prop2,'30-year fixed'),
+            ('Bank D',150000,3.6,800,'2005-04-01','2025-04-01',prop3,'20-year fixed'),
+            ('Bank E',250000,3.9,1300,'2010-05-01','2035-05-01',prop4,'25-year fixed'),
+            ('Bank F',600000,3.7,2800,'2007-06-01','2037-06-01',prop5,'30-year fixed');
+
+        -- InsurancePolicies
+        INSERT INTO InsurancePolicies(policy_number,provider,monthly_cost,start_date,end_date,property_id)
+        VALUES
+            (101,'Insurance Co A',150,'2024-01-01','2025-01-01',prop0),
+            (102,'Insurance Co B',120,'2024-02-01','2025-02-01',prop1),
+            (103,'Insurance Co C',180,'2024-03-01','2025-03-01',prop2),
+            (104,'Insurance Co D',100,'2024-04-01','2025-04-01',prop3),
+            (105,'Insurance Co E',110,'2024-05-01','2025-05-01',prop4),
+            (106,'Insurance Co F',160,'2024-06-01','2025-06-01',prop5);
+
+        -- ProjectInfos
+        INSERT INTO ProjectInfos(in_progress,project_title,project_description,ProjectInfoscol,property_id)
+        VALUES
+            (1,'Kitchen Renovation','Renovating the kitchen for better functionality.','Additional Notes',prop0),
+            (0,'Bathroom Remodel','Updating the bathroom with new fixtures and tiles.','Details here',prop1),
+            (1,'Roof Repair','Fixing leaks and ensuring the roof is stable.','Roof inspection due soon',prop2),
+            (0,'Landscaping','Landscaping the front yard to increase curb appeal.','Final design pending',prop3),
+            (1,'HVAC System Upgrade','Installing new energy-efficient HVAC system.','Work in progress',prop4),
+            (0,'Foundation Inspection','Inspecting the foundation for any structural issues.','Scheduled for next month',prop5);
+
+        SET proj0 = LAST_INSERT_ID(); -- we'll only need base ID for incremental inserts like ProjectUpdates
+        SET proj1 = proj0 + 1; SET proj2 = proj0 + 2; SET proj3 = proj0 + 3; SET proj4 = proj0 + 4; SET proj5 = proj0 + 5;
+
+        -- ProjectUpdates
+        INSERT INTO ProjectUpdates(project_id,updates,date)
+        VALUES
+            (proj0,'Started demolition of old cabinets and countertops.','2024-01-10'),
+            (proj1,'Demolition complete, tiles selected for new bathroom.','2024-02-20'),
+            (proj2,'Roof inspection complete, materials ordered for repair.','2024-03-05'),
+            (proj3,'Landscaping team has started work on the front yard.','2024-04-01'),
+            (proj4,'HVAC system installation started, ducts being replaced.','2024-05-10'),
+            (proj5,'Foundation inspection scheduled for next week.','2024-06-15');
+
+        -- Contractors
+        INSERT INTO Contractors(company_name,services,first_name,last_name)
+        VALUES
+            ('Construction Co A','General contracting, kitchen remodel','John','Doe'),
+            ('Construction Co B','Bathroom remodeling, plumbing','Jane','Smith'),
+            ('Roofing Co C','Roof repairs, maintenance','Michael','Johnson'),
+            ('Landscaping Co D','Landscaping, yard design','Emily','Brown'),
+            ('HVAC Co E','HVAC installation, maintenance','David','White'),
+            ('Foundation Co F','Foundation inspection and repair','Sarah','Davis');
+
+        SET cont0 = LAST_INSERT_ID(); SET cont1 = cont0 + 1; SET cont2 = cont0 + 2;
+        SET cont3 = cont0 + 3; SET cont4 = cont0 + 4; SET cont5 = cont0 + 5;
+
+        -- ProjectContractors
+        INSERT INTO ProjectContractors(project_id,contractor_id,services)
+        VALUES
+            (proj0,cont0,'General contracting, kitchen remodel'),
+            (proj1,cont1,'Bathroom remodeling, plumbing'),
+            (proj2,cont2,'Roof repairs, maintenance'),
+            (proj3,cont3,'Landscaping, yard design'),
+            (proj4,cont4,'HVAC installation, maintenance'),
+            (proj5,cont5,'Foundation inspection and repair');
+
+        -- PropertyHistories
+        INSERT INTO PropertyHistories(purchase_price,maintenance_notes,last_appraised_val,purchase_date,property_id)
+        VALUES
+            (800000,'Kitchen remodel completed in 2024',800000,'2023-05-01',prop0),
+            (1700000,'Bathroom renovation started in 2024',1700000,'2023-06-01',prop1),
+            (500000,'Roof repairs scheduled for 2024',500000,'2023-07-01',prop2),
+            (700000,'Landscaping improvements in progress',700000,'2023-08-01',prop3),
+            (600000,'HVAC system upgrade in progress',600000,'2023-09-01',prop4),
+            (650000,'Foundation inspection pending',650000,'2023-10-01',prop5);
+
+        SET hist0 = LAST_INSERT_ID(); SET hist1 = hist0 + 1; SET hist2 = hist0 + 2;
+        SET hist3 = hist0 + 3; SET hist4 = hist0 + 4; SET hist5 = hist0 + 5;
+
+        -- ExpenseHistories
+        INSERT INTO ExpenseHistories(date,cost,label,history_id)
+        VALUES
+            ('2024-01-01',5000,'Kitchen remodel',hist0),
+            ('2024-02-01',2500,'Bathroom renovation',hist1),
+            ('2024-03-01',3000,'Roof repairs',hist2),
+            ('2024-04-01',1500,'Landscaping',hist3),
+            ('2024-05-01',2000,'HVAC upgrade',hist4),
+            ('2024-06-01',2500,'Foundation inspection',hist5);
+
+        -- InspectionRecords
+        INSERT INTO InspectionRecords(notes,inspector_firstname,inspector_lastname,history_id)
+        VALUES
+            ('Kitchen remodel completed successfully','James','Taylor',hist0),
+            ('Bathroom renovation is 50% complete','Linda','Martinez',hist1),
+            ('Roof repairs scheduled for March 2024','Robert','Lee',hist2),
+            ('Landscaping improvements started','Patricia','Harris',hist3),
+            ('HVAC system upgrade in progress','William','Clark',hist4),
+            ('Foundation inspection results pending','Elizabeth','Lewis',hist5);
+
+        -- Units
+        INSERT INTO Units(property_id,bedroom_count,bathroom_count,rent,vacant,address_id)
+        VALUES
+            (prop0,3,2,5000,1,addr0),
+            (prop1,2,1,2500,0,addr1),
+            (prop2,3,2,5500,0,addr2),
+            (prop3,1,1,1000,1,addr3),
+            (prop4,1,1,1100,0,addr4),
+            (prop5,4,2,5500,1,addr5);
+
+        SET unit0 = LAST_INSERT_ID(); SET unit1 = unit0 + 1; SET unit2 = unit0 + 2;
+        SET unit3 = unit0 + 3; SET unit4 = unit0 + 4; SET unit5 = unit0 + 5;
+
+        -- LeaseAgreements
+        INSERT INTO LeaseAgreements(rent,start_date,end_date,terms,property_id)
+        VALUES
+            (5000,'2024-01-01','2025-01-01','12-month lease',prop0),
+            (2500,'2024-02-01','2025-02-01','12-month lease',prop1),
+            (5500,'2024-03-01','2025-03-01','12-month lease',prop2),
+            (1000,'2024-04-01','2025-04-01','12-month lease',prop3),
+            (1100,'2024-05-01','2025-05-01','12-month lease',prop4),
+            (5500,'2024-06-01','2025-06-01','12-month lease',prop5);
+
+        SET lease0 = LAST_INSERT_ID(); SET lease1 = lease0 + 1; SET lease2 = lease0 + 2;
+        SET lease3 = lease0 + 3; SET lease4 = lease0 + 4; SET lease5 = lease0 + 5;
+
+        -- Tenants
+        INSERT INTO Tenants(notes,first_name,last_name,lease_id,past_due_balance)
+        VALUES
+            ('Tenant is a reliable renter.','John','Doe',lease0,0),
+            ('Tenant moved in early.','Jane','Smith',lease1,0),
+            ('Tenant is late with payments.','Alice','Johnson',lease2,11000),
+            ('Tenant is renting a small studio.','Michael','Williams',lease3,0),
+            ('Tenant has a family of three.','Emily','Brown',lease4,0),
+            ('Tenant requested an extension.','Daniel','Davis',lease5,5500);
+
+        SET tenant0 = LAST_INSERT_ID(); SET tenant1 = tenant0 + 1; SET tenant2 = tenant0 + 2;
+        SET tenant3 = tenant0 + 3; SET tenant4 = tenant0 + 4; SET tenant5 = tenant0 + 5;
+
+        -- PaymentHistories
+        INSERT INTO PaymentHistories(amount,paid_date,due_date,unit_id,tenant_id)
+        VALUES
+            (5000,'2024-11-29','2024-12-01',unit0,tenant0),
+            (2500,'2024-12-01','2024-12-01',unit1,tenant1),
+            (5500,'2024-10-01','2024-12-01',unit2,tenant2),
+            (1000,'2024-12-01','2024-12-01',unit3,tenant3),
+            (1100,'2024-11-29','2024-12-01',unit4,tenant4),
+            (5500,'2024-11-01','2024-12-01',unit5,tenant5);
+
+        -- UnitTenants
+        INSERT INTO UnitTenants(unit_id,tenant_id,tenant_name,address_id,lease_id)
+        VALUES
+            (unit0,tenant0,'John Doe',addr0,lease0),
+            (unit1,tenant1,'Jane Smith',addr1,lease1),
+            (unit2,tenant2,'Alice Johnson',addr2,lease2),
+            (unit3,tenant3,'Michael Williams',addr3,lease3),
+            (unit4,tenant4,'Emily Brown',addr4,lease4),
+            (unit5,tenant5,'Daniel Davis',addr5,lease5);
+
+        COMMIT;
+END $$
+
+DELIMITER ;

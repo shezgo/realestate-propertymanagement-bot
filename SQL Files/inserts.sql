@@ -135,15 +135,17 @@ VALUES
 (600000, 'HVAC system upgrade in progress', 600000, '2023-09-01', 5),
 (650000, 'Foundation inspection pending', 650000, '2023-10-01', 6);
 
+SET @first_history_id = LAST_INSERT_ID();
+
 -- Insert for ExpenseHistories
 INSERT INTO `ExpenseHistories` (date, cost, label, history_id)
 VALUES
-('2024-01-01', 5000, 'Kitchen remodel', 1),
-('2024-02-01', 2500, 'Bathroom renovation', 2),
-('2024-03-01', 3000, 'Roof repairs', 3),
-('2024-04-01', 1500, 'Landscaping', 4),
-('2024-05-01', 2000, 'HVAC upgrade', 5),
-('2024-06-01', 2500, 'Foundation inspection', 6);
+('2024-01-01', 5000, 'Kitchen remodel', @first_history_id + 0),
+('2024-02-01', 2500, 'Bathroom renovation', @first_history_id + 1),
+('2024-03-01', 3000, 'Roof repairs', @first_history_id + 2),
+('2024-04-01', 1500, 'Landscaping', @first_history_id + 3),
+('2024-05-01', 2000, 'HVAC upgrade', @first_history_id + 4),
+('2024-06-01', 2500, 'Foundation inspection', @first_history_id + 5);
 
 -- Insert for InspectionRecords
 INSERT INTO `InspectionRecords` (notes, inspector_firstname, inspector_lastname, history_id)
