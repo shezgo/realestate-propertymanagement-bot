@@ -658,3 +658,140 @@ BEGIN
 END $$
 
 DELIMITER ;
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS ResetUserData $$
+
+CREATE PROCEDURE ResetUserData(IN in_user_id BIGINT)
+BEGIN
+-- Cleanup all sample data for a specific user
+SET @user_id = in_user_id;
+
+-- 1️ Delete PaymentHistories
+DELETE ph FROM PaymentHistories ph
+JOIN Units u ON ph.unit_id = u.unit_id
+JOIN PortfolioProperties pp ON u.property_id = pp.property_id
+JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.user_id = @user_id;
+
+-- 2️ Delete UnitTenants
+DELETE ut FROM UnitTenants ut
+JOIN Units u ON ut.unit_id = u.unit_id
+JOIN PortfolioProperties pp ON u.property_id = pp.property_id
+JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.user_id = @user_id;
+
+-- Delete Tenants **before** LeaseAgreements
+DELETE t FROM Tenants t
+JOIN LeaseAgreements la ON t.lease_id = la.lease_id
+JOIN Properties p ON la.property_id = p.property_id
+JOIN PortfolioProperties pp ON p.property_id = pp.property_id
+JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.user_id = @user_id;
+
+-- ️3 Delete LeaseAgreements
+DELETE la FROM LeaseAgreements la
+JOIN Properties p ON la.property_id = p.property_id
+JOIN PortfolioProperties pp ON p.property_id = pp.property_id
+JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.user_id = @user_id;
+
+-- 5 Delete ExpenseHistories
+DELETE eh FROM ExpenseHistories eh
+JOIN PropertyHistories ph ON eh.history_id = ph.history_id
+JOIN PortfolioProperties pp ON ph.property_id = pp.property_id
+JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.user_id = @user_id;
+
+-- 6️ Delete InspectionRecords
+DELETE ir FROM InspectionRecords ir
+JOIN PropertyHistories ph ON ir.history_id = ph.history_id
+JOIN PortfolioProperties pp ON ph.property_id = pp.property_id
+JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.user_id = @user_id;
+
+-- 7️ Delete ProjectContractors
+DELETE pc FROM ProjectContractors pc
+JOIN ProjectInfos pi ON pc.project_id = pi.project_id
+JOIN PortfolioProperties pp ON pi.property_id = pp.property_id
+JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.user_id = @user_id;
+
+-- 8️ Delete ProjectUpdates
+DELETE pu FROM ProjectUpdates pu
+JOIN ProjectInfos pi ON pu.project_id = pi.project_id
+JOIN PortfolioProperties pp ON pi.property_id = pp.property_id
+JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.user_id = @user_id;
+
+-- 9️ Delete InsurancePolicies
+DELETE ip FROM InsurancePolicies ip
+JOIN Properties p ON ip.property_id = p.property_id
+JOIN PortfolioProperties pp ON p.property_id = pp.property_id
+JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.user_id = @user_id;
+
+-- 10 Delete ProjectInfos
+DELETE pi FROM ProjectInfos pi
+JOIN PortfolioProperties pp ON pi.property_id = pp.property_id
+JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.user_id = @user_id;
+
+# Contractors are a strong entity currently, so there's no use case for this.
+-- 11 Delete Contractors
+-- DELETE c
+-- FROM Contractors c
+-- LEFT JOIN ProjectContractors pc 
+--     ON c.tracking_id = pc.contractor_id
+-- WHERE ?
+
+
+-- 12️ Delete PropertyHistories
+DELETE ph FROM PropertyHistories ph
+JOIN PortfolioProperties pp ON ph.property_id = pp.property_id
+JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.user_id = @user_id;
+
+-- 13 Delete Units
+DELETE u FROM Units u
+JOIN PortfolioProperties pp ON u.property_id = pp.property_id
+JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.user_id = @user_id;
+
+-- 14️ Delete PortfolioProperties
+DELETE pp FROM PortfolioProperties pp
+JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.user_id = @user_id;
+
+# For the below operations, SQL requires turning off safemode. Also, these delete global orphan data rather than user specific.
+# Better to create separate operation for clearing orphans.
+-- 15️ Delete Properties that are not in PortfolioProperties
+-- DELETE p
+-- FROM Properties p
+-- LEFT JOIN PortfolioProperties pp
+--     ON p.property_id = pp.property_id
+-- WHERE pp.property_id IS NULL;
+
+
+-- 16️ Delete Addresses that are not referenced by any Property
+-- DELETE a
+-- FROM Addresses a
+-- LEFT JOIN Properties p
+--     ON a.address_id = p.address_id
+-- WHERE p.address_id IS NULL;
+
+-- 17️ Delete TaxRecords whose property no longer exists
+-- DELETE tr
+-- FROM TaxRecords tr
+-- LEFT JOIN Properties p
+--     ON tr.property_id = p.property_id
+-- WHERE p.property_id IS NULL;
+
+-- 18️ Delete Mortgages whose property no longer exists
+-- DELETE m
+-- FROM Mortgages m
+-- LEFT JOIN Properties p
+--     ON m.property_id = p.property_id
+-- WHERE p.property_id IS NULL;
+END $$

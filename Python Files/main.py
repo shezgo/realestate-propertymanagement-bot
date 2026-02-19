@@ -76,6 +76,7 @@ async def test_bot(ctx, with_db_conn=None):
 #       (1) Define the business logic requirements for each command in the help parameter.
 #       (2) Implement the functionalities of these commands based on your project needs.
 
+# Bot command to register a user's discord account with the program.
 @bot.command(name = "register", help = "Use this command to create an account for your " 
                                         "property management database")
 async def register_user(ctx, email = None, first_name = None, last_name = None):
@@ -119,6 +120,47 @@ async def register_user(ctx, email = None, first_name = None, last_name = None):
     registered_user = ModelFactory.make(Tables.REGISTERED_USERS, new_user)
 
     await ctx.send(f"Welcome, {registered_user.first_name}! Your Discord ID has been securely linked to your account.")
+
+@bot.command(name="create_sample", help = "Use this command to create a set of sample" 
+                                                "data in your account for testing.")
+async def create_sample_data(ctx):
+    discord_id = ctx.author.id 
+
+    existing_user = Database.select(Query.REGISTERED_USER, (discord_id,))
+    
+    if not existing_user:
+        print("Account needed to create sample data - use !register to create an account.")
+        return
+    
+    Database.callprocedure(Query.PROC_CreateSampleUserData, (discord_id,))
+
+    await ctx.send(f"Sample data has been created for {ModelFactory.getBy(Tables.REGISTERED_USERS,
+                                                                           discord_id).full_name}")
+    
+@bot.command(name="reset_user_data", help = "Use this command to reset your data - this will clear all associated" \
+                                        "contents with your portfolio.")
+async def reset_user_data(ctx):
+    discord_id = ctx.author.id
+    await ctx.send("Are you sure you want to reset your data? (y/n)")
+
+    def check(msg):
+        return msg.author == ctx.author and msg.channel == ctx.channel
+
+    try:
+        response_msg = await bot.wait_for("message", timeout = 60.0, check = check)
+        if response_msg.content.lower == 'y':
+            Database.callprocedure(Query.PROC_ResetUserData, (discord_id,))
+            await ctx.send("User portfolio and associated contents have been reset.") 
+
+    
+    except:
+        await ctx.send("Timed out. Please try again.")
+        return
+    
+    
+
+
+
 
 bot.run(TOKEN)
 

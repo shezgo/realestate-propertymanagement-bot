@@ -125,9 +125,19 @@ class Query:
         VALUES (%(tracking_id)s, %(email)s, %(first_name)s, %(last_name)s, %(role_id)s)
     """
 
-    PROC_AssignRole = """AssignRole"""
-    PROC_CheckBeforeQuery = """CheckBeforeQuery"""
-    PROC_RefreshRole = """RefreshRole"""
+    CHECK_NUM_PROPERTIES = """
+        SELECT COUNT(pp.property_id) AS property_count
+        FROM UserPortfolios up
+        JOIN PortfolioProperties pp
+            ON up.portfolio_id = pp.portfolio_id
+        WHERE up.user_id = %s
+    """
+
+    PROC_AssignRole = """CALL AssignRole"""
+    PROC_CheckBeforeQuery = """CALL CheckBeforeQuery"""
+    PROC_RefreshRole = """CALL RefreshRole"""
+    PROC_CreateSampleUserData = """CALL CreateSampleUserData"""
+    PROC_ResetUserData = """CALL ResetUserData"""
     
 
 class Tables:

@@ -21,3 +21,23 @@ def test_register():
     assert registered_user.full_name == 'First_name Last_name'
     assert registered_user.role_id == 1
 
+def test_create_sample():
+    """Test the CreateSampleUserData procedure."""
+    discord_id = 12340 
+
+    existing_user = Database.select(Query.REGISTERED_USER, (discord_id,))
+    
+    if not existing_user:
+        print("Account needed to create sample data - use !register to create an account.")
+        return
+    
+    before_result = Database.select(Query.CHECK_NUM_PROPERTIES, (discord_id,))
+    before_count = before_result[0]["property_count"] if before_result else 0
+
+    Database.callprocedure(Query.PROC_CreateSampleUserData, (discord_id,))
+
+    after_result = Database.select(Query.CHECK_NUM_PROPERTIES, (discord_id,))
+    after_count = after_result[0]["property_count"] if after_result else 0
+
+    assert after_count == before_count + 6, \
+    f"Expected +6 properties, got {after_count - before_count}"
