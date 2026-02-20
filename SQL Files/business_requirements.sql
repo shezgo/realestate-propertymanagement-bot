@@ -88,6 +88,7 @@ BEGIN
     END$$
     
 -- 3 
+DELIMITER $$
 DROP PROCEDURE IF EXISTS RefreshRole;
 CREATE PROCEDURE RefreshRole(IN in_user_id INT, IN in_role_id INT)
 BEGIN
@@ -540,14 +541,14 @@ BEGIN
             (proj5,'Foundation inspection scheduled for next week.','2024-06-15');
 
         -- Contractors
-        INSERT INTO Contractors(company_name,services,first_name,last_name)
+        INSERT INTO Contractors(company_name,services,first_name,last_name,user_id)
         VALUES
-            ('Construction Co A','General contracting, kitchen remodel','John','Doe'),
-            ('Construction Co B','Bathroom remodeling, plumbing','Jane','Smith'),
-            ('Roofing Co C','Roof repairs, maintenance','Michael','Johnson'),
-            ('Landscaping Co D','Landscaping, yard design','Emily','Brown'),
-            ('HVAC Co E','HVAC installation, maintenance','David','White'),
-            ('Foundation Co F','Foundation inspection and repair','Sarah','Davis');
+            ('Construction Co A','General contracting, kitchen remodel','John','Doe', in_user_id),
+            ('Construction Co B','Bathroom remodeling, plumbing','Jane','Smith', in_user_id),
+            ('Roofing Co C','Roof repairs, maintenance','Michael','Johnson', in_user_id),
+            ('Landscaping Co D','Landscaping, yard design','Emily','Brown', in_user_id),
+            ('HVAC Co E','HVAC installation, maintenance','David','White', in_user_id),
+            ('Foundation Co F','Foundation inspection and repair','Sarah','Davis', in_user_id);
 
         SET cont0 = LAST_INSERT_ID(); SET cont1 = cont0 + 1; SET cont2 = cont0 + 2;
         SET cont3 = cont0 + 3; SET cont4 = cont0 + 4; SET cont5 = cont0 + 5;
@@ -738,13 +739,10 @@ JOIN PortfolioProperties pp ON pi.property_id = pp.property_id
 JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
 WHERE up.user_id = @user_id;
 
-# Contractors are a strong entity currently, so there's no use case for this.
 -- 11 Delete Contractors
--- DELETE c
--- FROM Contractors c
--- LEFT JOIN ProjectContractors pc 
---     ON c.tracking_id = pc.contractor_id
--- WHERE ?
+DELETE c
+FROM Contractors c
+WHERE c.user_id = @user_id;
 
 
 -- 12️ Delete PropertyHistories
@@ -784,7 +782,7 @@ WHERE up.user_id = @user_id;
 -- 17️ Delete TaxRecords whose property no longer exists
 -- DELETE tr
 -- FROM TaxRecords tr
--- LEFT JOIN Properties p
+-- LEFT JOIN Properties pRegisteredUsers
 --     ON tr.property_id = p.property_id
 -- WHERE p.property_id IS NULL;
 

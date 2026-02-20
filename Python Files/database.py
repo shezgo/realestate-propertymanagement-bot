@@ -70,14 +70,29 @@ class Database:
         connection = self.connect()
         cursor = connection.cursor(pymysql.cursors.DictCursor)
         try:
-            if values:
-                if type=="Proc":
-                    cursor.callproc(query, values)
-                cursor.executemany(query, values) if many_entities else cursor.execute(query, values)
+            if type == "Proc":
+                cursor.callproc(query, values)
+
             else:
-                cursor.execute(query)
+                if values:
+                    if many_entities:
+                        cursor.executemany(query, values)
+                    else:
+                        cursor.execute(query, values)
+                else:
+                    cursor.execute(query)
+
             if fetch:
                 return cursor.fetchall()
+        # try:
+        #     if values:
+        #         if type=="Proc":
+        #             cursor.callproc(query, values)
+        #         cursor.executemany(query, values) if many_entities else cursor.execute(query, values)
+        #     else:
+        #         cursor.execute(query)
+        #     if fetch:
+        #         return cursor.fetchall()
         finally:
             connection.commit()
             cursor.close()
@@ -133,11 +148,16 @@ class Query:
         WHERE up.user_id = %s
     """
 
-    PROC_AssignRole = """CALL AssignRole"""
-    PROC_CheckBeforeQuery = """CALL CheckBeforeQuery"""
-    PROC_RefreshRole = """CALL RefreshRole"""
-    PROC_CreateSampleUserData = """CALL CreateSampleUserData"""
-    PROC_ResetUserData = """CALL ResetUserData"""
+    DELETE_REGISTERED_USER = """
+    DELETE FROM RegisteredUsers 
+    WHERE tracking_id = %s
+"""
+
+    PROC_AssignRole = """AssignRole"""
+    PROC_CheckBeforeQuery = """CheckBeforeQuery"""
+    PROC_RefreshRole = """RefreshRole"""
+    PROC_CreateSampleUserData = """CreateSampleUserData"""
+    PROC_ResetUserData = """ResetUserData"""
     
 
 class Tables:

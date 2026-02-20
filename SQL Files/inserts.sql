@@ -106,14 +106,14 @@ VALUES
 (6, 'Foundation inspection scheduled for next week.', '2024-06-15');
 
 -- Insert for Contractors
-INSERT INTO `Contractors` (company_name, services, first_name, last_name)
+INSERT INTO `Contractors` (company_name, services, first_name, last_name, user_id)
 VALUES
-('Construction Co A', 'General contracting, kitchen remodel', 'John', 'Doe'),
-('Construction Co B', 'Bathroom remodeling, plumbing', 'Jane', 'Smith'),
-('Roofing Co C', 'Roof repairs, maintenance', 'Michael', 'Johnson'),
-('Landscaping Co D', 'Landscaping, yard design', 'Emily', 'Brown'),
-('HVAC Co E', 'HVAC installation, maintenance', 'David', 'White'),
-('Foundation Co F', 'Foundation inspection and repair', 'Sarah', 'Davis');
+('Construction Co A', 'General contracting, kitchen remodel', 'John', 'Doe', 1),
+('Construction Co B', 'Bathroom remodeling, plumbing', 'Jane', 'Smith', 2),
+('Roofing Co C', 'Roof repairs, maintenance', 'Michael', 'Johnson', 3),
+('Landscaping Co D', 'Landscaping, yard design', 'Emily', 'Brown', 1),
+('HVAC Co E', 'HVAC installation, maintenance', 'David', 'White', 2),
+('Foundation Co F', 'Foundation inspection and repair', 'Sarah', 'Davis', 3);
 
 -- Insert for ProjectContractors
 INSERT INTO `ProjectContractors` (project_id, contractor_id, services)

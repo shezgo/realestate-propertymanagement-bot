@@ -28,8 +28,6 @@ class ModelFactory:
 
     @staticmethod
     def make(table_identifier, data):
-        if table_identifier == Tables.REGISTERED_USERS:
-            Database.insert(Query.INSERT_REGISTERED_USER, values = data)
 
         if table_identifier == Tables.ADDRESSES:
             Database.insert(Query.INSERT_ADDRESS, values = data)
@@ -95,7 +93,7 @@ class ModelFactory:
             Database.insert(Query.INSERT_USER_PORTFOLIO, values = data)
 
         
-        return ModelFactory.getBy(table_identifier, data["tracking_id"])
+        return getBy(table_identifier, data["tracking_id"])
 
 @staticmethod
 def getBy(table_identifier, entity_identifier):

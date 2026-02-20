@@ -6,6 +6,7 @@
 
 from models import *
 def test_register():
+
     """Test the register user function from ModelFactory.make"""
     new_user ={
         "tracking_id": 12340,
@@ -41,3 +42,17 @@ def test_create_sample():
 
     assert after_count == before_count + 6, \
     f"Expected +6 properties, got {after_count - before_count}"
+
+def test_reset_user_data():
+    """Test the ResetUserData procedure."""
+    discord_id = 12340
+    before_result = Database.select(Query.CHECK_NUM_PROPERTIES, (discord_id,))
+    before_count = before_result[0]["property_count"] if before_result else 0
+
+    Database.callprocedure(Query.PROC_ResetUserData, (discord_id,))
+
+    after_result = Database.select(Query.CHECK_NUM_PROPERTIES, (discord_id,))
+    after_count = after_result[0]["property_count"] if after_result else 0
+
+    assert after_count == before_count - 6, \
+    f"Expected -6 properties, got {after_count - before_count}"
