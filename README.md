@@ -44,7 +44,8 @@ Tests whether the bot is online and optionally checks the database connection.
 - `!test_bot` — confirms the bot is running
 - `!test_bot db_connect` — also tests the database connection and reports success or failure
 
-<!-- Screenshot here -->
+<img width="400" height="130" alt="image" src="https://github.com/user-attachments/assets/2ce0dcb5-7859-432b-8688-1d2c0b12e1b0" />
+
 
 ---
 
@@ -59,7 +60,8 @@ The bot will prompt you for:
 
 Once registered, your Discord account is tied to a profile in the database and you can use all other commands. Each Discord account can only be registered once.
 
-<!-- Screenshot here -->
+<img width="400" height="420" alt="image" src="https://github.com/user-attachments/assets/9d27c19a-ddb2-4dbb-9631-81683f6ea71e" />
+
 
 ---
 
@@ -70,8 +72,8 @@ Populates your account with sample property data for testing and demonstration p
 Calling this command runs a stored procedure that creates 6 sample properties along with associated tenants, mortgages, units, and projects. This lets you explore all portfolio views without entering real data manually.
 
 > Requires an active registered account (`!register` first).
+<img width="400" height="100" alt="image" src="https://github.com/user-attachments/assets/5abba757-f13d-4de6-b39c-03cc75ba609a" />
 
-<!-- Screenshot here -->
 
 ---
 
@@ -83,7 +85,8 @@ The bot will ask you to confirm with `y` or `n` before proceeding. Once confirme
 
 > You have 60 seconds to respond to the confirmation prompt.
 
-<!-- Screenshot here -->
+<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/7b870785-b228-42fc-95ff-e9e7e1fd8e92" />
+
 
 ---
 
@@ -95,7 +98,8 @@ Results are sorted by cash flow from lowest to highest (worst performing propert
 
 
 
-<!-- Screenshot here -->
+<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/88c58137-dd2c-42fe-ab94-f3855f7afa3e" />
+
 
 ---
 
@@ -107,7 +111,8 @@ Results are sorted by past due balance from highest to lowest, so the most urgen
 
 
 
-<!-- Screenshot here -->
+<img width="400" height="350" alt="image" src="https://github.com/user-attachments/assets/76845cec-f436-433b-9673-f67e135322ce" />
+
 
 ---
 
@@ -119,7 +124,8 @@ Results are sorted by start date. A totals row is included at the bottom summari
 
 
 
-<!-- Screenshot here -->
+<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/a3859895-e264-4791-a107-26e59534e4ea" />
+
 
 ---
 
@@ -131,7 +137,8 @@ In-progress projects are shown first. Each entry includes the assigned contracto
 
 
 
-<!-- Screenshot here -->
+<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/a2bb83db-744a-4abf-9789-4e0b66cf905f" />
+
 
 ---
 
@@ -148,5 +155,5 @@ realestate-propertymanagement-bot/
 │   ├── databasemodel.sql              # Database schema
 │   ├── business_requirements.sql      # Stored procedures and triggers
 │   └── inserts.sql                    # Sample data inserts
-└── documentation/                     # ERD diagrams and project docs
+└── documentation/                     # ERD, EER diagrams and project docs
 ```
