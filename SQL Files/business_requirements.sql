@@ -793,3 +793,122 @@ WHERE up.user_id = @user_id;
 --     ON m.property_id = p.property_id
 -- WHERE p.property_id IS NULL;
 END $$
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS CleanOrphanedData $$
+
+CREATE PROCEDURE CleanOrphanedData()
+BEGIN
+-- Deletes rows across all entities that are no longer tied to a portfolio, property, or user.
+-- Run this after ResetUserData to remove the global orphan records it intentionally skips.
+-- Deletion order respects FK constraints (children before parents).
+
+-- 1. PaymentHistories with no matching Unit or Tenant
+DELETE ph FROM PaymentHistories ph
+LEFT JOIN Units u ON ph.unit_id = u.unit_id
+LEFT JOIN Tenants t ON ph.tenant_id = t.tenant_id
+WHERE u.unit_id IS NULL OR t.tenant_id IS NULL;
+
+-- 2. UnitTenants with no matching Unit, Tenant, or LeaseAgreement
+DELETE ut FROM UnitTenants ut
+LEFT JOIN Units u ON ut.unit_id = u.unit_id
+LEFT JOIN Tenants t ON ut.tenant_id = t.tenant_id
+LEFT JOIN LeaseAgreements la ON ut.lease_id = la.lease_id
+WHERE u.unit_id IS NULL OR t.tenant_id IS NULL OR la.lease_id IS NULL;
+
+-- 3. Tenants whose LeaseAgreement no longer exists
+DELETE t FROM Tenants t
+LEFT JOIN LeaseAgreements la ON t.lease_id = la.lease_id
+WHERE la.lease_id IS NULL;
+
+-- 4. LeaseAgreements whose property is not in any portfolio
+DELETE la FROM LeaseAgreements la
+LEFT JOIN PortfolioProperties pp ON la.property_id = pp.property_id
+WHERE pp.property_id IS NULL;
+
+-- 5. ExpenseHistories whose PropertyHistory no longer exists
+DELETE eh FROM ExpenseHistories eh
+LEFT JOIN PropertyHistories ph ON eh.history_id = ph.history_id
+WHERE ph.history_id IS NULL;
+
+-- 6. InspectionRecords whose PropertyHistory no longer exists
+DELETE ir FROM InspectionRecords ir
+LEFT JOIN PropertyHistories ph ON ir.history_id = ph.history_id
+WHERE ph.history_id IS NULL;
+
+-- 7. ProjectContractors whose ProjectInfo or Contractor no longer exists
+DELETE pc FROM ProjectContractors pc
+LEFT JOIN ProjectInfos pi ON pc.project_id = pi.project_id
+LEFT JOIN Contractors c ON pc.contractor_id = c.tracking_id
+WHERE pi.project_id IS NULL OR c.tracking_id IS NULL;
+
+-- 8. ProjectUpdates whose ProjectInfo no longer exists
+DELETE pu FROM ProjectUpdates pu
+LEFT JOIN ProjectInfos pi ON pu.project_id = pi.project_id
+WHERE pi.project_id IS NULL;
+
+-- 9. InsurancePolicies whose property is not in any portfolio
+DELETE ip FROM InsurancePolicies ip
+LEFT JOIN PortfolioProperties pp ON ip.property_id = pp.property_id
+WHERE pp.property_id IS NULL;
+
+-- 10. ProjectInfos whose property is not in any portfolio
+DELETE pi FROM ProjectInfos pi
+LEFT JOIN PortfolioProperties pp ON pi.property_id = pp.property_id
+WHERE pp.property_id IS NULL;
+
+-- 11. Contractors whose user no longer exists in RegisteredUsers
+DELETE c FROM Contractors c
+LEFT JOIN RegisteredUsers ru ON c.user_id = ru.tracking_id
+WHERE ru.tracking_id IS NULL;
+
+-- 12. PropertyHistories whose property is not in any portfolio
+DELETE ph FROM PropertyHistories ph
+LEFT JOIN PortfolioProperties pp ON ph.property_id = pp.property_id
+WHERE pp.property_id IS NULL;
+
+-- 13. Units whose property is not in any portfolio
+DELETE u FROM Units u
+LEFT JOIN PortfolioProperties pp ON u.property_id = pp.property_id
+WHERE pp.property_id IS NULL;
+
+-- 14. TaxRecords whose property is not in any portfolio
+DELETE tr FROM TaxRecords tr
+LEFT JOIN PortfolioProperties pp ON tr.property_id = pp.property_id
+WHERE pp.property_id IS NULL;
+
+-- 15. Mortgages whose property is not in any portfolio
+DELETE m FROM Mortgages m
+LEFT JOIN PortfolioProperties pp ON m.property_id = pp.property_id
+WHERE pp.property_id IS NULL;
+
+-- 16. PortfolioProperties entries whose Property or Portfolio no longer exists
+DELETE pp FROM PortfolioProperties pp
+LEFT JOIN Properties p ON pp.property_id = p.property_id
+LEFT JOIN Portfolios pf ON pp.portfolio_id = pf.portfolio_id
+WHERE p.property_id IS NULL OR pf.portfolio_id IS NULL;
+
+-- 17. Properties not in any portfolio
+DELETE p FROM Properties p
+LEFT JOIN PortfolioProperties pp ON p.property_id = pp.property_id
+WHERE pp.property_id IS NULL;
+
+-- 18. Addresses not referenced by any Property or Unit
+DELETE a FROM Addresses a
+LEFT JOIN Properties p ON a.address_id = p.address_id
+LEFT JOIN Units u ON a.address_id = u.address_id
+WHERE p.address_id IS NULL AND u.address_id IS NULL;
+
+-- 19. UserPortfolios entries whose User or Portfolio no longer exists
+DELETE up FROM UserPortfolios up
+LEFT JOIN RegisteredUsers ru ON up.user_id = ru.tracking_id
+LEFT JOIN Portfolios pf ON up.portfolio_id = pf.portfolio_id
+WHERE ru.tracking_id IS NULL OR pf.portfolio_id IS NULL;
+
+-- 20. Portfolios with no owning user
+DELETE pf FROM Portfolios pf
+LEFT JOIN UserPortfolios up ON pf.portfolio_id = up.portfolio_id
+WHERE up.portfolio_id IS NULL;
+
+END $$

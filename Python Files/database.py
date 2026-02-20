@@ -67,7 +67,7 @@ class Database:
         cursor = connection.cursor(pymysql.cursors.DictCursor)
         try:
             if type == "Proc":
-                cursor.callproc(query, values)
+                cursor.callproc(query, values or ())
 
             else:
                 if values:
@@ -111,20 +111,13 @@ class Database:
         return Database().get_response(query, values=values)
 
     @staticmethod
-    def callprocedure(sql_stored_component, parameters, fetch=False):
+    def callprocedure(sql_stored_component, parameters=None, fetch=False):
         return Database().get_response(sql_stored_component, values=parameters, type="Proc", fetch=fetch)
 
     # TODO: Implement additional methods to facilitate further data manipulation as required by your application.
 
 
 class Query:
-    """
-    The implementation of triggers, functions, and procedures related to the project can be executed directly 
-    from MySQL Workbench connected to your RDS instance, as they do not require user parameters and are activated 
-    by predefined queries. All calls to these components should be handled through this class.
-    """
-
-    # TODO: Create all your queries or calls to your sql stored components here
 
     REGISTERED_USER = """
         SELECT * FROM RegisteredUsers
@@ -145,15 +138,22 @@ class Query:
     """
 
     DELETE_REGISTERED_USER = """
-    DELETE FROM RegisteredUsers 
-    WHERE tracking_id = %s
-"""
+        DELETE FROM RegisteredUsers
+        WHERE tracking_id = %s
+    """
+
+    DELETE_USER_PORTFOLIO = """
+        DELETE FROM UserPortfolios
+        WHERE tracking_id = %s
+    """
+
 
     PROC_AssignRole = """AssignRole"""
     PROC_CheckBeforeQuery = """CheckBeforeQuery"""
     PROC_RefreshRole = """RefreshRole"""
     PROC_CreateSampleUserData = """CreateSampleUserData"""
     PROC_ResetUserData = """ResetUserData"""
+    PROC_CleanOrphanedData = """CleanOrphanedData"""
     
 
 class Tables:

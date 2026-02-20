@@ -3,6 +3,8 @@
 
 from models import *
 def test_register():
+    Database.delete(Query.DELETE_USER_PORTFOLIO, (12340,))
+    Database.delete(Query.DELETE_REGISTERED_USER, (12340,))
 
     """Test the register user function from ModelFactory.make"""
     new_user ={
@@ -47,9 +49,11 @@ def test_reset_user_data():
     before_count = before_result[0]["property_count"] if before_result else 0
 
     Database.callprocedure(Query.PROC_ResetUserData, (discord_id,))
+    Database.callprocedure(Query.PROC_CleanOrphanedData)
 
     after_result = Database.select(Query.CHECK_NUM_PROPERTIES, (discord_id,))
     after_count = after_result[0]["property_count"] if after_result else 0
 
     assert after_count == before_count - 6, \
     f"Expected -6 properties, got {after_count - before_count}"
+
