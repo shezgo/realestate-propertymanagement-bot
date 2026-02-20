@@ -114,9 +114,6 @@ class Database:
     def callprocedure(sql_stored_component, parameters=None, fetch=False):
         return Database().get_response(sql_stored_component, values=parameters, type="Proc", fetch=fetch)
 
-    # TODO: Implement additional methods to facilitate further data manipulation as required by your application.
-
-
 class Query:
 
     REGISTERED_USER = """
@@ -147,6 +144,33 @@ class Query:
         WHERE tracking_id = %s
     """
 
+    PORTFOLIO_PERFORMANCE_BY_USER = """
+        SELECT *
+        FROM PortfolioPerformance
+        WHERE User_ID = %s
+        ORDER BY cash_flow ASC
+    """
+
+    TENANTS_BY_USER = """
+        SELECT *
+        FROM ViewTenants
+        WHERE user_id = %s
+        ORDER BY past_due_balance DESC
+    """
+
+    MORTGAGES_BY_USER = """
+        SELECT *
+        FROM ViewMortgages
+        WHERE user_id = %s
+        ORDER BY mortgage_id IS NULL, start_date ASC
+    """
+
+    CURRENT_PROJECTS_BY_USER = """
+        SELECT *
+        FROM CurrentProjects
+        WHERE user_id = %s
+        ORDER BY in_progress DESC, numbered_street ASC
+    """
 
     PROC_AssignRole = """AssignRole"""
     PROC_CheckBeforeQuery = """CheckBeforeQuery"""
@@ -154,6 +178,10 @@ class Query:
     PROC_CreateSampleUserData = """CreateSampleUserData"""
     PROC_ResetUserData = """ResetUserData"""
     PROC_CleanOrphanedData = """CleanOrphanedData"""
+    PROC_GetPortfolioPerformance = """GetPortfolioPerformance"""
+    PROC_GetTenants = """GetTenants"""
+    PROC_GetMortgages = """GetMortgages"""
+    PROC_GetCurrentProjects = """GetCurrentProjects"""
     
 
 class Tables:

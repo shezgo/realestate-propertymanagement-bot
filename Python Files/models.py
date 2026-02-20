@@ -112,6 +112,10 @@ def getBy(table_identifier, entity_identifier):
         Tables.TENANTS: TenantModel,
         Tables.PAYMENT_HISTORIES: PaymentHistoryModel,
         Tables.UNIT_TENANTS: UnitTenantModel,
+        Tables.PORTFOLIO_PERFORMANCE: PortfolioPerformanceModel,
+        Tables.VIEW_TENANTS: ViewTenantsModel,
+        Tables.VIEW_MORTGAGES: ViewMortgagesModel,
+        Tables.CURRENT_PROJECTS: CurrentProjectsModel,
     }
 
     if table_identifier not in table_map:
@@ -647,3 +651,71 @@ class UserPortfolioModel(ModelInterface):
         self.user_id = row.get("user_id")
         self.portfolio_id = row.get("portfolio_id")
         self.last_appraised_val = row.get("last_appraised_val")
+
+
+class CurrentProjectsModel(ModelInterface):
+    # Queries the CurrentProjects view and holds all rows for a given user,
+    # ordered by in-progress status first, then by address.
+
+    def __init__(self, user_id):
+        self.user_id = user_id
+        self.rows = []
+        self._load()
+
+    def _load(self):
+        data = Database.select(Query.CURRENT_PROJECTS_BY_USER, (self.user_id,))
+        if not data:
+            return
+
+        self.rows = data
+
+
+class ViewMortgagesModel(ModelInterface):
+    # Queries the ViewMortgages view and holds all rows for a given user,
+    # ordered by start date ascending with the totals row last.
+
+    def __init__(self, user_id):
+        self.user_id = user_id
+        self.rows = []
+        self._load()
+
+    def _load(self):
+        data = Database.select(Query.MORTGAGES_BY_USER, (self.user_id,))
+        if not data:
+            return
+
+        self.rows = data
+
+
+class ViewTenantsModel(ModelInterface):
+    # Queries the ViewTenants view and holds all rows for a given user,
+    # ordered by past due balance descending (highest first).
+
+    def __init__(self, user_id):
+        self.user_id = user_id
+        self.rows = []
+        self._load()
+
+    def _load(self):
+        data = Database.select(Query.TENANTS_BY_USER, (self.user_id,))
+        if not data:
+            return
+
+        self.rows = data
+
+
+class PortfolioPerformanceModel(ModelInterface):
+    # Queries the PortfolioPerformance view and holds all rows for a given user,
+    # ordered by cash flow ascending (worst performers first).
+
+    def __init__(self, user_id):
+        self.user_id = user_id
+        self.rows = []
+        self._load()
+
+    def _load(self):
+        data = Database.select(Query.PORTFOLIO_PERFORMANCE_BY_USER, (self.user_id,))
+        if not data:
+            return
+
+        self.rows = data

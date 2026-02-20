@@ -171,13 +171,24 @@ LEFT JOIN Mortgages m ON prop.property_id = m.property_id
 LEFT JOIN Addresses a ON prop.address_id = a.address_id
 LEFT JOIN CashFlowCTE cfte ON pp.property_id = cfte.property_id
 
-DELIMITER ; 
+DELIMITER $$
 
--- Testing
-SELECT *
-FROM PortfolioPerformance
-WHERE User_ID = 2 -- Only used for demo purposes. Python will handle identity + filtering.
-ORDER BY cash_flow ASC;
+DROP PROCEDURE IF EXISTS GetPortfolioPerformance $$
+
+CREATE PROCEDURE GetPortfolioPerformance(IN in_user_id BIGINT)
+BEGIN
+    -- Depends on the PortfolioPerformance view defined above.
+    -- Returns all properties for the given user ordered by cash flow ascending (worst performers first).
+    SELECT *
+    FROM PortfolioPerformance
+    WHERE User_ID = in_user_id
+    ORDER BY cash_flow ASC;
+END $$
+
+DELIMITER ;
+
+-- TestingCleanOrphanedData
+CALL GetPortfolioPerformance(2);
 
 /*
     Business Requirement #3:
@@ -229,7 +240,25 @@ JOIN
     FROM ViewTenants
     WHERE user_id = 1
     ORDER BY t.past_due_balance DESC;
+    
+DELIMITER $$
 
+DROP PROCEDURE IF EXISTS GetTenants $$
+
+CREATE PROCEDURE GetTenants(IN in_user_id BIGINT)
+BEGIN
+    -- Depends on the ViewTenants view defined above.
+    -- Returns all tenants for the given user ordered by past due balance descending (highest first).
+    SELECT *
+    FROM ViewTenants
+    WHERE user_id = in_user_id
+    ORDER BY past_due_balance DESC;
+END $$
+
+DELIMITER ;
+
+-- Testing
+CALL GetTenants(1);
 
 /*
     Business Requirement #4:
@@ -268,7 +297,7 @@ JOIN PropertyHistories ph ON ph.property_id = p.property_id
 JOIN PortfolioProperties pp ON pp.property_id = p.property_id
 JOIN Portfolios pf ON pf.portfolio_id = pp.portfolio_id
 JOIN UserPortfolios up ON up.portfolio_id = pf.portfolio_id
-JOIN RegisteredUsers ru ON ru.tracking_id = up.tracking_id
+JOIN RegisteredUsers ru ON ru.tracking_id = up.user_id
 JOIN Addresses a ON p.address_id = a.address_id
 
 
@@ -293,17 +322,36 @@ JOIN PropertyHistories ph ON ph.property_id = p.property_id
 JOIN PortfolioProperties pp ON pp.property_id = p.property_id
 JOIN Portfolios pf ON pf.portfolio_id = pp.portfolio_id
 JOIN UserPortfolios up ON up.portfolio_id = pf.portfolio_id
-JOIN RegisteredUsers ru ON ru.tracking_id = up.tracking_id
+JOIN RegisteredUsers ru ON ru.tracking_id = up.user_id
 GROUP BY ru.tracking_id;
 
 
 DELIMITER ;
 
 -- Testing
-SELECT * 
+SELECT *
 FROM ViewMortgages
 WHERE user_id = 1 OR user_id IS NULL
 ORDER BY mortgage_id IS NULL, start_date ASC;
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS GetMortgages $$
+
+CREATE PROCEDURE GetMortgages(IN in_user_id BIGINT)
+BEGIN
+    -- Depends on the ViewMortgages view defined above.
+    -- Returns all mortgages for the given user, with the totals row last.
+    SELECT *
+    FROM ViewMortgages
+    WHERE user_id = in_user_id
+    ORDER BY mortgage_id IS NULL, start_date ASC;
+END $$
+
+DELIMITER ;
+
+-- Testing
+CALL GetMortgages(1);
 
 /*
     Business Requirement #5:
@@ -346,10 +394,30 @@ JOIN Contractors c on pc.contractor_id = c.tracking_id
 JOIN Addresses a on prop.address_id = a.address_id
 
 DELIMITER ;
+
 -- Testing
 SELECT *
 FROM CurrentProjects
-WHERE user_id = 1
+WHERE user_id = 1;
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS GetCurrentProjects $$
+
+CREATE PROCEDURE GetCurrentProjects(IN in_user_id BIGINT)
+BEGIN
+    -- Depends on the CurrentProjects view defined above.
+    -- Returns all projects for the given user, in-progress projects first.
+    SELECT *
+    FROM CurrentProjects
+    WHERE user_id = in_user_id
+    ORDER BY in_progress DESC, numbered_street ASC;
+END $$
+
+DELIMITER ;
+
+-- Testing
+CALL GetCurrentProjects(1);
 
 /*
 Business Requirement #6:
@@ -941,3 +1009,8 @@ LEFT JOIN UserPortfolios up ON pf.portfolio_id = up.portfolio_id
 WHERE up.portfolio_id IS NULL;
 
 END $$
+
+-- To call from workbench, use:
+SET SQL_SAFE_UPDATES = 0;
+CALL CleanOrphanedData();
+SET SQL_SAFE_UPDATES = 1;
