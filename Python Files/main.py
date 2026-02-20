@@ -1,27 +1,13 @@
 """
-The code provided below serves as a basic framework for implementing a Discord bot.
-It is intended to guide students in developing a bot that meets the specific requirements of their projects.
-
 IMPORTANT: Database logic must not be implemented directly in this file. Ensure all database interactions
 are handled in separate, designated files to maintain a clean separation of concerns.
 
-Please modify and extend this code to fit your project's specific requirements.
 """
 
 import os
 import discord
 from discord.ext import commands
 # from models import *
-
-"""
-The code provided below serves as a basic framework for implementing a Discord bot.
-It is intended to guide students in developing a bot that meets the specific requirements of their projects.
-
-IMPORTANT: Database logic must not be implemented directly in this file. Ensure all database interactions
-are handled in separate, designated files to maintain a clean separation of concerns.
-
-Please modify and extend this code to fit your project's specific requirements.
-"""
 
 import os
 import discord
@@ -46,10 +32,6 @@ bot = commands.Bot(command_prefix='!', intents=intents)
                                    "from your backend service")
 async def test_bot(ctx, with_db_conn=None):
     """
-    Note: This function will work only if your Bot TOKEN credential added in your secrets matches the one provided by
-    your Bot application created in your Discord Developer Console. Additionally, your bot will create a connection to
-    your database only if your database credentials added to your secrets for the database connection are correct and
-    the 'with_db_conn' parameter is enabled.
     Usage:
       (1) To test the bot without a database connection: !test_bot
       (2) To test the bot with a database connection: !test_bot db_connect

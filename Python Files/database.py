@@ -1,8 +1,4 @@
 # IMPORTANT: All SQL-related logic must be confined to this file.
-# Students will not receive credit for this project if SQL code or database logic is found outside of database.py.
-# Usage example for interfacing with the database:
-#    from database import *
-#    data_from_select = Database.select(query, (value_1, value_2, ..., value_n))
 
 import os
 from dotenv import load_dotenv
@@ -11,7 +7,7 @@ import pymysql.cursors
 # Load .env if it exists for local development
 load_dotenv()
 
-# Environment variables for database connectivity. These should be set securely in your project's environment settings.
+# Environment variables for database connectivity, which are set in environment settings.
 db_host = os.environ["DB_HOST"]
 db_username = os.environ["DB_USER"]
 db_password = os.environ["DB_PASSWORD"]
