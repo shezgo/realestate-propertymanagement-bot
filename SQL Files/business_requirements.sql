@@ -378,7 +378,7 @@ DELIMITER $$
 DROP PROCEDURE IF EXISTS CreateSampleUserData $$
 
 CREATE PROCEDURE CreateSampleUserData(IN in_user_id BIGINT)
-BEGIN
+proc: BEGIN
     DECLARE v_portfolio_id INT;
 
     -- Addresses
@@ -412,7 +412,14 @@ BEGIN
         RESIGNAL;
     END;
 
+        -- Check if sample data has already been created
+        IF (SELECT has_sample_data FROM RegisteredUsers WHERE tracking_id = in_user_id) = 1 THEN
+            LEAVE proc;
+        END IF;
+
         START TRANSACTION;
+
+        UPDATE RegisteredUsers SET has_sample_data = 1 WHERE tracking_id = in_user_id;
 
         -- Get or create portfolio
         SELECT portfolio_id INTO v_portfolio_id
@@ -659,6 +666,28 @@ BEGIN
 END $$
 
 DELIMITER ;
+
+/*
+Business Requirement #6:
+----------------------------------------------------
+Purpose: Assign a complete set of sample data for new users to begin testing the program.
+
+Description: Reset all data corresponding with a user.
+
+Challenge: Connecting all tables to the same portfolio, and ensuring consistency in the data. Also important is to ensure 
+that it can only be called once to prevent excessive querying or DOS attacks.
+
+Assumptions: The calling method provides the tracking_id of the calling RegisteredUser.
+
+Implementation plan: 
+1. Drop the procedure if it exists. Create it and pass in the caller's user tracking_id.
+2. Wrap the procedure in START and COMMIT with an exit exception to ROLLBACK, so we don't have partial data errors.
+3. Get the user's portfolio, or create one if it doesn't exist.
+4. Begin inserting sample properties into Portfolio.
+5. Follow the EER to implement corresponding data in other entities branching off from Portfolio for tracking
+and consistency.
+6. COMMIT the changes.
+*/
 
 DELIMITER $$
 

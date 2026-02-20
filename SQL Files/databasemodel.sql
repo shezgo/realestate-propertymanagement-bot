@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS `RegisteredUsers` (
 ) VIRTUAL,
   `role_id` INT NULL,
   `role_expires` DATE NULL,
+  `has_sample_data` TINYINT NOT NULL DEFAULT 0,
   PRIMARY KEY (`tracking_id`),
   UNIQUE INDEX `email_UNIQUE` (`email` ASC) VISIBLE,
   INDEX `role_id_idx` (`role_id` ASC) VISIBLE,
