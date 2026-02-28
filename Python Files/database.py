@@ -1,12 +1,14 @@
 # IMPORTANT: All SQL-related logic must be confined to this file.
 
 import os
+import queue
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 import pymysql.cursors
 
-_executor = ThreadPoolExecutor(max_workers=4)
+POOL_SIZE = 4
+_executor = ThreadPoolExecutor(max_workers=POOL_SIZE)
 
 # Load .env if it exists for local development
 load_dotenv()
@@ -16,6 +18,62 @@ db_host = os.environ["DB_HOST"]
 db_username = os.environ["DB_USER"]
 db_password = os.environ["DB_PASSWORD"]
 db_name = os.environ["DB_NAME"]
+
+
+class ConnectionPool:
+    """
+    Maintains a fixed set of persistent MySQL connections.
+    Connections are checked out by worker threads and returned after each query,
+    avoiding the overhead of opening and closing a new TCP connection per query.
+    queue.Queue is used as the underlying store — it is thread-safe by design,
+    so no explicit mutex is needed to protect the pool itself.
+    """
+
+    def __init__(self, size):
+        self._pool = queue.Queue(maxsize=size)
+        for _ in range(size):
+            self._pool.put(self._make_connection())
+
+    def _make_connection(self):
+        return pymysql.connect(
+            host=db_host, port=3306, user=db_username, password=db_password,
+            database=db_name, charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor
+        )
+
+    def acquire(self):
+        """Check out a connection. Blocks if all connections are in use."""
+        conn = self._pool.get()
+        try:
+            conn.ping(reconnect=True)  # Reconnect automatically if connection went stale
+        except Exception:
+            conn = self._make_connection()
+        return conn
+
+    def release(self, conn):
+        """Return a connection to the pool."""
+        self._pool.put(conn)
+
+    def close_all(self):
+        """Close every connection in the pool (call on bot shutdown)."""
+        while not self._pool.empty():
+            conn = self._pool.get_nowait()
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+
+_pool = ConnectionPool(POOL_SIZE)
+
+# Semaphore is created lazily on first use — asyncio requires it to be
+# instantiated inside the running event loop, not at module import time.
+_db_semaphore = None
+
+def _get_semaphore():
+    global _db_semaphore
+    if _db_semaphore is None:
+        _db_semaphore = asyncio.Semaphore(POOL_SIZE)
+    return _db_semaphore
 
 
 class Database:
@@ -67,12 +125,11 @@ class Database:
         Returns:
             The result of the query if fetch is True; None otherwise.
         """
-        connection = self.connect()
+        connection = _pool.acquire()
         cursor = connection.cursor(pymysql.cursors.DictCursor)
         try:
             if type == "Proc":
                 cursor.callproc(query, values or ())
-
             else:
                 if values:
                     if many_entities:
@@ -84,19 +141,10 @@ class Database:
 
             if fetch:
                 return cursor.fetchall()
-        # try:
-        #     if values:
-        #         if type=="Proc":
-        #             cursor.callproc(query, values)
-        #         cursor.executemany(query, values) if many_entities else cursor.execute(query, values)
-        #     else:
-        #         cursor.execute(query)
-        #     if fetch:
-        #         return cursor.fetchall()
         finally:
             connection.commit()
             cursor.close()
-            connection.close()
+            _pool.release(connection)  # Return connection to pool instead of closing it
 
     @staticmethod
     def select(query, values=None, fetch=True):
@@ -119,31 +167,39 @@ class Database:
         return Database().get_response(sql_stored_component, values=parameters, type="Proc", fetch=fetch)
 
     # --- Async wrappers (run blocking DB calls on a background thread) ---
+    # Each wrapper acquires the semaphore before scheduling work on the executor.
+    # This caps the number of concurrent DB operations to POOL_SIZE, ensuring
+    # threads never compete for a connection that isn't available in the pool.
 
     @staticmethod
     async def select_async(query, values=None, fetch=True):
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(_executor, lambda: Database.select(query, values, fetch))
+        async with _get_semaphore():
+            loop = asyncio.get_running_loop()
+            return await loop.run_in_executor(_executor, lambda: Database.select(query, values, fetch))
 
     @staticmethod
     async def insert_async(query, values=None, many_entities=False):
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(_executor, lambda: Database.insert(query, values, many_entities))
+        async with _get_semaphore():
+            loop = asyncio.get_running_loop()
+            return await loop.run_in_executor(_executor, lambda: Database.insert(query, values, many_entities))
 
     @staticmethod
     async def update_async(query, values=None):
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(_executor, lambda: Database.update(query, values))
+        async with _get_semaphore():
+            loop = asyncio.get_running_loop()
+            return await loop.run_in_executor(_executor, lambda: Database.update(query, values))
 
     @staticmethod
     async def delete_async(query, values=None):
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(_executor, lambda: Database.delete(query, values))
+        async with _get_semaphore():
+            loop = asyncio.get_running_loop()
+            return await loop.run_in_executor(_executor, lambda: Database.delete(query, values))
 
     @staticmethod
     async def callprocedure_async(sql_stored_component, parameters=None, fetch=False):
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(_executor, lambda: Database.callprocedure(sql_stored_component, parameters, fetch))
+        async with _get_semaphore():
+            loop = asyncio.get_running_loop()
+            return await loop.run_in_executor(_executor, lambda: Database.callprocedure(sql_stored_component, parameters, fetch))
 
 class Query:
 
