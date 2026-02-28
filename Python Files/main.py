@@ -5,6 +5,7 @@ are handled in separate, designated files to maintain a clean separation of conc
 """
 
 import os
+import asyncio
 import discord
 from discord.ext import commands
 from models import *
@@ -74,7 +75,7 @@ class Setup(commands.Cog, name="Setup"):
     async def register_user(self, ctx, email=None, first_name=None, last_name=None):
         discord_id = ctx.author.id
 
-        existing_user = Database.select(Query.REGISTERED_USER, (discord_id,))
+        existing_user = await Database.select_async(Query.REGISTERED_USER, (discord_id,))
 
         if existing_user:
             await ctx.send("You are already registered in the system.")
@@ -98,7 +99,7 @@ class Setup(commands.Cog, name="Setup"):
             last_name_msg = await self.bot.wait_for("message", timeout=60.0, check=check)
             last_name = last_name_msg.content.strip()
 
-        except:
+        except TimeoutError:
             await ctx.send("Registration timed out. Please try again.")
             return
 
@@ -109,7 +110,7 @@ class Setup(commands.Cog, name="Setup"):
             "last_name": last_name,
             "role_id": 1  # All users are owners for now.
         }
-        registered_user = ModelFactory.make(Tables.REGISTERED_USERS, new_user)
+        registered_user = await asyncio.to_thread(ModelFactory.make, Tables.REGISTERED_USERS, new_user)
 
         await ctx.send(f"Welcome, {registered_user.first_name}! Your Discord ID has been securely linked to your account.")
 
@@ -117,15 +118,16 @@ class Setup(commands.Cog, name="Setup"):
     async def create_sample_data(self, ctx):
         discord_id = ctx.author.id
 
-        existing_user = Database.select(Query.REGISTERED_USER, (discord_id,))
+        existing_user = await Database.select_async(Query.REGISTERED_USER, (discord_id,))
 
         if not existing_user:
             print("Account needed to create sample data - use !register to create an account.")
             return
 
-        Database.callprocedure(Query.PROC_CreateSampleUserData, (discord_id,))
+        await Database.callprocedure_async(Query.PROC_CreateSampleUserData, (discord_id,))
 
-        await ctx.send(f"Sample data has been created for {getBy(Tables.REGISTERED_USERS, discord_id).full_name}")
+        user = await asyncio.to_thread(getBy, Tables.REGISTERED_USERS, discord_id)
+        await ctx.send(f"Sample data has been created for {user.full_name}")
 
     @commands.command(name="reset_user_data", help="Reset your data — clears all contents associated with your portfolio.")
     async def reset_user_data(self, ctx):
@@ -137,15 +139,15 @@ class Setup(commands.Cog, name="Setup"):
 
         try:
             response_msg = await self.bot.wait_for("message", timeout=60.0, check=check)
-            if response_msg.content.lower() == 'y':
-                Database.callprocedure(Query.PROC_ResetUserData, (discord_id,))
-                await ctx.send("User portfolio and associated contents have been reset.")
-            else:
-                await ctx.send("Reset cancelled.")
-
-        except:
+        except TimeoutError:
             await ctx.send("Timed out. Please try again.")
             return
+
+        if response_msg.content.lower() == 'y':
+            await Database.callprocedure_async(Query.PROC_ResetUserData, (discord_id,))
+            await ctx.send("User portfolio and associated contents have been reset.")
+        else:
+            await ctx.send("Reset cancelled.")
 
 
 class Portfolio(commands.Cog, name="Portfolio"):
@@ -158,13 +160,13 @@ class Portfolio(commands.Cog, name="Portfolio"):
     async def portfolio_performance(self, ctx):
         discord_id = ctx.author.id
 
-        existing_user = Database.select(Query.REGISTERED_USER, (discord_id,))
+        existing_user = await Database.select_async(Query.REGISTERED_USER, (discord_id,))
 
         if not existing_user:
             await ctx.send("You need to be registered to view portfolio performance. Use !register to create an account.")
             return
 
-        performance = PortfolioPerformanceModel(discord_id)
+        performance = await asyncio.to_thread(PortfolioPerformanceModel, discord_id)
 
         if not performance.rows:
             await ctx.send("No portfolio data found. Use !create_sample to add sample data.")
@@ -192,13 +194,13 @@ class Portfolio(commands.Cog, name="Portfolio"):
     async def view_tenants(self, ctx):
         discord_id = ctx.author.id
 
-        existing_user = Database.select(Query.REGISTERED_USER, (discord_id,))
+        existing_user = await Database.select_async(Query.REGISTERED_USER, (discord_id,))
 
         if not existing_user:
             await ctx.send("You need to be registered to view tenants. Use !register to create an account.")
             return
 
-        tenants = ViewTenantsModel(discord_id)
+        tenants = await asyncio.to_thread(ViewTenantsModel, discord_id)
 
         if not tenants.rows:
             await ctx.send("No tenant data found. Use !create_sample to add sample data.")
@@ -221,13 +223,13 @@ class Portfolio(commands.Cog, name="Portfolio"):
     async def view_mortgages(self, ctx):
         discord_id = ctx.author.id
 
-        existing_user = Database.select(Query.REGISTERED_USER, (discord_id,))
+        existing_user = await Database.select_async(Query.REGISTERED_USER, (discord_id,))
 
         if not existing_user:
             await ctx.send("You need to be registered to view mortgages. Use !register to create an account.")
             return
 
-        mortgages = ViewMortgagesModel(discord_id)
+        mortgages = await asyncio.to_thread(ViewMortgagesModel, discord_id)
 
         if not mortgages.rows:
             await ctx.send("No mortgage data found. Use !create_sample to add sample data.")
@@ -260,13 +262,13 @@ class Portfolio(commands.Cog, name="Portfolio"):
     async def view_projects(self, ctx):
         discord_id = ctx.author.id
 
-        existing_user = Database.select(Query.REGISTERED_USER, (discord_id,))
+        existing_user = await Database.select_async(Query.REGISTERED_USER, (discord_id,))
 
         if not existing_user:
             await ctx.send("You need to be registered to view projects. Use !register to create an account.")
             return
 
-        projects = CurrentProjectsModel(discord_id)
+        projects = await asyncio.to_thread(CurrentProjectsModel, discord_id)
 
         if not projects.rows:
             await ctx.send("No project data found. Use !create_sample to add sample data.")

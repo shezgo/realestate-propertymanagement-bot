@@ -1,8 +1,12 @@
 # IMPORTANT: All SQL-related logic must be confined to this file.
 
 import os
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 import pymysql.cursors
+
+_executor = ThreadPoolExecutor(max_workers=4)
 
 # Load .env if it exists for local development
 load_dotenv()
@@ -113,6 +117,33 @@ class Database:
     @staticmethod
     def callprocedure(sql_stored_component, parameters=None, fetch=False):
         return Database().get_response(sql_stored_component, values=parameters, type="Proc", fetch=fetch)
+
+    # --- Async wrappers (run blocking DB calls on a background thread) ---
+
+    @staticmethod
+    async def select_async(query, values=None, fetch=True):
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(_executor, lambda: Database.select(query, values, fetch))
+
+    @staticmethod
+    async def insert_async(query, values=None, many_entities=False):
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(_executor, lambda: Database.insert(query, values, many_entities))
+
+    @staticmethod
+    async def update_async(query, values=None):
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(_executor, lambda: Database.update(query, values))
+
+    @staticmethod
+    async def delete_async(query, values=None):
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(_executor, lambda: Database.delete(query, values))
+
+    @staticmethod
+    async def callprocedure_async(sql_stored_component, parameters=None, fetch=False):
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(_executor, lambda: Database.callprocedure(sql_stored_component, parameters, fetch))
 
 class Query:
 

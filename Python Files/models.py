@@ -511,7 +511,7 @@ class RegisteredUserModel(ModelInterface):
         self.full_name = row.get("full_name")
         self.role_id = row.get("role_id")
         self.role_expires = row.get("role_expires")
-
+        self.has_sample_data = row.get("has_sample_data")
 class RoleModel(ModelInterface):
 
     def __init__(self, role_id):

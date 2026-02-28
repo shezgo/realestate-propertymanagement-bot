@@ -1008,6 +1008,7 @@ DELETE pf FROM Portfolios pf
 LEFT JOIN UserPortfolios up ON pf.portfolio_id = up.portfolio_id
 WHERE up.portfolio_id IS NULL;
 
+
 END $$
 
 -- To call from workbench, use:
