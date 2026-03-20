@@ -14,10 +14,12 @@ _executor = ThreadPoolExecutor(max_workers=POOL_SIZE)
 load_dotenv()
 
 # Environment variables for database connectivity, which are set in environment settings.
-db_host = os.environ["DB_HOST"]
-db_username = os.environ["DB_USER"]
-db_password = os.environ["DB_PASSWORD"]
-db_name = os.environ["DB_NAME"]
+# Using .get() so that importing this module does not crash when env vars are absent
+# (e.g. in CI environments running unit tests that mock all DB calls).
+db_host = os.environ.get("DB_HOST", "")
+db_username = os.environ.get("DB_USER", "")
+db_password = os.environ.get("DB_PASSWORD", "")
+db_name = os.environ.get("DB_NAME", "")
 
 
 class ConnectionPool:
@@ -63,7 +65,15 @@ class ConnectionPool:
                 pass
 
 
-_pool = ConnectionPool(POOL_SIZE)
+# Pool is created lazily on first use so that importing this module does not
+# attempt real MySQL connections at import time (would break unit test CI).
+_pool = None
+
+def _get_pool():
+    global _pool
+    if _pool is None:
+        _pool = ConnectionPool(POOL_SIZE)
+    return _pool
 
 # Semaphore is created lazily on first use — asyncio requires it to be
 # instantiated inside the running event loop, not at module import time.
@@ -125,7 +135,7 @@ class Database:
         Returns:
             The result of the query if fetch is True; None otherwise.
         """
-        connection = _pool.acquire()
+        connection = _get_pool().acquire()
         cursor = connection.cursor(pymysql.cursors.DictCursor)
         try:
             if type == "Proc":
