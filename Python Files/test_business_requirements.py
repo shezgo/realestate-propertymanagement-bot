@@ -1,59 +1,47 @@
-# Discord API has a limited number of requests (bot requests) per day.
-# These test methods are used to avoid hitting the limit during testing.
-
+import pytest
 from models import *
-def test_register():
-    Database.delete(Query.DELETE_USER_PORTFOLIO, (12340,))
-    Database.delete(Query.DELETE_REGISTERED_USER, (12340,))
 
-    """Test the register user function from ModelFactory.make"""
-    new_user ={
-        "tracking_id": 12340,
-        "email": 'test@email.com',
-        "first_name": 'First_name',
-        "last_name": 'Last_name',
-        "role_id": 1 
-    }
-    registered_user = ModelFactory.make(Tables.REGISTERED_USERS, new_user)
+@pytest.mark.integration
+def test_register(registered_test_user):
+    """User inserted by fixture should be retrievable with correct fields."""
+    user = Database.select(Query.REGISTERED_USER, (registered_test_user,))
 
-    assert registered_user.tracking_id == 12340
-    assert registered_user.email == 'test@email.com'
-    assert registered_user.full_name == 'First_name Last_name'
-    assert registered_user.role_id == 1
+    assert user is not None and len(user) == 1
+    row = user[0]
+    assert row["tracking_id"] == registered_test_user
+    assert row["email"] == "test@email.com"
+    assert row["first_name"] == "First_name"
+    assert row["last_name"] == "Last_name"
+    assert row["role_id"] == 1
 
-def test_create_sample():
-    """Test the CreateSampleUserData procedure."""
-    discord_id = 12340 
 
-    existing_user = Database.select(Query.REGISTERED_USER, (discord_id,))
-    
-    if not existing_user:
-        print("Account needed to create sample data - use !register to create an account.")
-        return
-    
-    before_result = Database.select(Query.CHECK_NUM_PROPERTIES, (discord_id,))
-    before_count = before_result[0]["property_count"] if before_result else 0
+@pytest.mark.integration
+def test_create_sample(registered_test_user):
+    """CreateSampleUserData procedure should add exactly 6 properties."""
+    before = Database.select(Query.CHECK_NUM_PROPERTIES, (registered_test_user,))
+    before_count = before[0]["property_count"] if before else 0
 
-    Database.callprocedure(Query.PROC_CreateSampleUserData, (discord_id,))
+    Database.callprocedure(Query.PROC_CreateSampleUserData, (registered_test_user,))
 
-    after_result = Database.select(Query.CHECK_NUM_PROPERTIES, (discord_id,))
-    after_count = after_result[0]["property_count"] if after_result else 0
+    after = Database.select(Query.CHECK_NUM_PROPERTIES, (registered_test_user,))
+    after_count = after[0]["property_count"] if after else 0
 
     assert after_count == before_count + 6, \
-    f"Expected +6 properties, got {after_count - before_count}"
+        f"Expected +6 properties, got {after_count - before_count}"
 
-def test_reset_user_data():
-    """Test the ResetUserData procedure."""
-    discord_id = 12340
-    before_result = Database.select(Query.CHECK_NUM_PROPERTIES, (discord_id,))
-    before_count = before_result[0]["property_count"] if before_result else 0
 
-    Database.callprocedure(Query.PROC_ResetUserData, (discord_id,))
+@pytest.mark.integration
+def test_reset_user_data(registered_test_user):
+    """ResetUserData procedure should remove all properties added by CreateSampleUserData."""
+    Database.callprocedure(Query.PROC_CreateSampleUserData, (registered_test_user,))
+    before = Database.select(Query.CHECK_NUM_PROPERTIES, (registered_test_user,))
+    before_count = before[0]["property_count"] if before else 0
+
+    Database.callprocedure(Query.PROC_ResetUserData, (registered_test_user,))
     Database.callprocedure(Query.PROC_CleanOrphanedData)
 
-    after_result = Database.select(Query.CHECK_NUM_PROPERTIES, (discord_id,))
-    after_count = after_result[0]["property_count"] if after_result else 0
+    after = Database.select(Query.CHECK_NUM_PROPERTIES, (registered_test_user,))
+    after_count = after[0]["property_count"] if after else 0
 
     assert after_count == before_count - 6, \
-    f"Expected -6 properties, got {after_count - before_count}"
-
+        f"Expected -6 properties, got {after_count - before_count}"

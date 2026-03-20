@@ -1003,6 +1003,104 @@ LEFT JOIN RegisteredUsers ru ON up.user_id = ru.tracking_id
 LEFT JOIN Portfolios pf ON up.portfolio_id = pf.portfolio_id
 WHERE ru.tracking_id IS NULL OR pf.portfolio_id IS NULL;
 
+-- Steps 19a-19n: Clean data tied to Portfolios that have no UserPortfolio owner.
+-- This handles the case where UserPortfolios was deleted before ResetUserData was called,
+-- leaving PortfolioProperties and all their child data still in the DB but unreachable
+-- via the UserPortfolios join that ResetUserData and steps 1-19 rely on.
+-- Deletion order mirrors ResetUserData: children before parents.
+
+-- 19a. PaymentHistories via orphaned portfolio's units
+DELETE ph FROM PaymentHistories ph
+JOIN Units u ON ph.unit_id = u.unit_id
+JOIN PortfolioProperties pp ON u.property_id = pp.property_id
+LEFT JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.portfolio_id IS NULL;
+
+-- 19b. UnitTenants via orphaned portfolio's units
+DELETE ut FROM UnitTenants ut
+JOIN Units u ON ut.unit_id = u.unit_id
+JOIN PortfolioProperties pp ON u.property_id = pp.property_id
+LEFT JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.portfolio_id IS NULL;
+
+-- 19c. Tenants via orphaned portfolio's lease agreements
+DELETE t FROM Tenants t
+JOIN LeaseAgreements la ON t.lease_id = la.lease_id
+JOIN PortfolioProperties pp ON la.property_id = pp.property_id
+LEFT JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.portfolio_id IS NULL;
+
+-- 19d. LeaseAgreements via orphaned portfolio's properties
+DELETE la FROM LeaseAgreements la
+JOIN PortfolioProperties pp ON la.property_id = pp.property_id
+LEFT JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.portfolio_id IS NULL;
+
+-- 19e. ExpenseHistories via orphaned portfolio's property histories
+DELETE eh FROM ExpenseHistories eh
+JOIN PropertyHistories psh ON eh.history_id = psh.history_id
+JOIN PortfolioProperties pp ON psh.property_id = pp.property_id
+LEFT JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.portfolio_id IS NULL;
+
+-- 19f. InspectionRecords via orphaned portfolio's property histories
+DELETE ir FROM InspectionRecords ir
+JOIN PropertyHistories psh ON ir.history_id = psh.history_id
+JOIN PortfolioProperties pp ON psh.property_id = pp.property_id
+LEFT JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.portfolio_id IS NULL;
+
+-- 19g. ProjectUpdates via orphaned portfolio's project infos
+DELETE pu FROM ProjectUpdates pu
+JOIN ProjectInfos pi ON pu.project_id = pi.project_id
+JOIN PortfolioProperties pp ON pi.property_id = pp.property_id
+LEFT JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.portfolio_id IS NULL;
+
+-- 19h. InsurancePolicies via orphaned portfolio's properties
+DELETE ip FROM InsurancePolicies ip
+JOIN PortfolioProperties pp ON ip.property_id = pp.property_id
+LEFT JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.portfolio_id IS NULL;
+
+-- 19i. ProjectInfos via orphaned portfolio's properties
+DELETE pi FROM ProjectInfos pi
+JOIN PortfolioProperties pp ON pi.property_id = pp.property_id
+LEFT JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.portfolio_id IS NULL;
+
+-- 19j. PropertyHistories via orphaned portfolio's properties
+DELETE psh FROM PropertyHistories psh
+JOIN PortfolioProperties pp ON psh.property_id = pp.property_id
+LEFT JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.portfolio_id IS NULL;
+
+-- 19k. Units via orphaned portfolio's properties
+DELETE u FROM Units u
+JOIN PortfolioProperties pp ON u.property_id = pp.property_id
+LEFT JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.portfolio_id IS NULL;
+
+-- 19l. TaxRecords via orphaned portfolio's properties
+DELETE tr FROM TaxRecords tr
+JOIN PortfolioProperties pp ON tr.property_id = pp.property_id
+LEFT JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.portfolio_id IS NULL;
+
+-- 19m. Mortgages via orphaned portfolio's properties
+DELETE m FROM Mortgages m
+JOIN PortfolioProperties pp ON m.property_id = pp.property_id
+LEFT JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.portfolio_id IS NULL;
+
+-- 19n. PortfolioProperties for orphaned portfolios
+-- After children are cleared, the PortfolioProperties themselves can be deleted.
+-- Step 17 (Properties not in any portfolio) and step 20 (Portfolios with no owner)
+-- then handle the remaining parents.
+DELETE pp FROM PortfolioProperties pp
+LEFT JOIN UserPortfolios up ON pp.portfolio_id = up.portfolio_id
+WHERE up.portfolio_id IS NULL;
+
 -- 20. Portfolios with no owning user
 DELETE pf FROM Portfolios pf
 LEFT JOIN UserPortfolios up ON pf.portfolio_id = up.portfolio_id

@@ -1,0 +1,4 @@
+discord.py
+pymysql
+python-dotenv
+pytest

@@ -228,7 +228,17 @@ class Query:
 
     DELETE_USER_PORTFOLIO = """
         DELETE FROM UserPortfolios
-        WHERE tracking_id = %s
+        WHERE user_id = %s
+    """
+
+    DELETE_USER_PROJECT_CONTRACTORS = """
+        DELETE pc FROM ProjectContractors pc
+        JOIN Contractors c ON pc.contractor_id = c.tracking_id
+        WHERE c.user_id = %s
+    """
+
+    DELETE_USER_CONTRACTORS = """
+        DELETE FROM Contractors WHERE user_id = %s
     """
 
     PORTFOLIO_PERFORMANCE_BY_USER = """

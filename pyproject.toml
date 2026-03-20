@@ -1,0 +1,10 @@
+[tool.pytest.ini_options]
+testpaths = ["Python Files"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "integration: marks tests that require a live database connection",
+    "unit: marks tests that run fully offline with mocked dependencies",
+]
+addopts = "-v --tb=short"
